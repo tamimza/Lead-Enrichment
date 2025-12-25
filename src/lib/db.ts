@@ -220,6 +220,20 @@ export async function getOldestPendingLead(): Promise<Lead | null> {
 }
 
 /**
+ * Delete a lead by ID
+ */
+export async function deleteLead(id: string): Promise<boolean> {
+  const query = `
+    DELETE FROM leads
+    WHERE id = $1
+    RETURNING id
+  `;
+
+  const result = await pool.query(query, [id]);
+  return result.rowCount !== null && result.rowCount > 0;
+}
+
+/**
  * Test database connection
  */
 export async function testConnection(): Promise<boolean> {

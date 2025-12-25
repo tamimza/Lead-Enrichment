@@ -68,6 +68,28 @@ export default function AdminDashboard() {
     toast.success('Email copied to clipboard');
   };
 
+  const handleDelete = async (leadId: string, leadName: string) => {
+    if (!confirm(`Are you sure you want to delete "${leadName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/leads/${leadId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete lead');
+      }
+
+      toast.success('Lead deleted successfully');
+      fetchLeads(); // Refresh the list
+    } catch (error) {
+      toast.error('Failed to delete lead');
+      console.error('Delete lead error:', error);
+    }
+  };
+
   const formatDate = (date: Date | undefined) => {
     if (!date) return 'N/A';
     return new Date(date).toLocaleString();
@@ -165,12 +187,20 @@ export default function AdminDashboard() {
                       {formatDate(lead.createdAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => setSelectedLead(lead)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        View Details
-                      </button>
+                      <div className="flex space-x-3">
+                        <button
+                          onClick={() => setSelectedLead(lead)}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          View Details
+                        </button>
+                        <button
+                          onClick={() => handleDelete(lead.id, lead.fullName)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
