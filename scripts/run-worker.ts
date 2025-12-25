@@ -13,6 +13,9 @@ import { closeQueue, getQueueStats } from '../src/lib/queue';
 // Redis connection for worker
 const redisConnection = new Redis(process.env.REDIS_URL!, {
   maxRetriesPerRequest: null,
+  tls: {
+    rejectUnauthorized: false, // Required for Upstash
+  },
 });
 
 console.log('\n========================================');

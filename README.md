@@ -91,11 +91,13 @@ redis-server
 You need **two terminal windows**:
 
 **Terminal 1: Next.js Server**
+
 ```bash
 npm run dev
 ```
 
 **Terminal 2: Worker Process**
+
 ```bash
 npm run worker
 ```
@@ -126,6 +128,7 @@ User Form → PostgreSQL → Redis Queue → Claude Worker → Results → Admin
 ## API Endpoints
 
 ### POST /api/leads
+
 Create a new lead and queue for enrichment.
 
 ```bash
@@ -142,6 +145,7 @@ curl -X POST http://localhost:3000/api/leads \
 ```
 
 ### GET /api/leads
+
 List leads with pagination and filtering.
 
 ```bash
@@ -150,6 +154,7 @@ curl "http://localhost:3000/api/leads?page=1&limit=25&status=enriched" \
 ```
 
 ### GET /api/health
+
 System health check.
 
 ```bash
@@ -242,11 +247,13 @@ vercel
 The worker is a long-running background process and needs to be deployed separately from the Next.js app.
 
 **Recommended platforms:**
+
 - **Railway** - Simple deployment with automatic restarts
 - **Render** - Background worker service
 - **Fly.io** - Lightweight container hosting
 
 **Configuration example (Railway):**
+
 ```json
 {
   "build": { "builder": "NIXPACKS" },
@@ -306,16 +313,17 @@ echo $ANTHROPIC_API_KEY
 
 ### Estimated Monthly Costs (100 leads)
 
-| Service | Cost |
-|---------|------|
-| Claude API (Sonnet 4.5) | $10-20 |
-| Vercel (Hobby) | Free |
-| Database (e.g., Neon) | Free tier |
-| Redis (e.g., Upstash) | Free tier |
-| Worker hosting (Railway) | $5 |
-| **Total** | **~$15-25/month** |
+| Service                  | Cost              |
+| ------------------------ | ----------------- |
+| Claude API (Sonnet 4.5)  | $10-20            |
+| Vercel (Hobby)           | Free              |
+| Database (e.g., Neon)    | Free tier         |
+| Redis (e.g., Upstash)    | Free tier         |
+| Worker hosting (Railway) | $5                |
+| **Total**                | **~$15-25/month** |
 
 ### Per Lead
+
 - Claude API: ~$0.10-0.20 per enrichment
 - Database/Redis: Negligible
 - Bandwidth: Negligible
@@ -346,6 +354,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## Support
 
 For issues, questions, or contributions:
+
 - Open an issue on GitHub
 - Check existing issues for solutions
 - Review the code documentation

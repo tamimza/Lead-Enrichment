@@ -7,6 +7,9 @@ import Redis from 'ioredis';
 // Redis connection configuration
 const redisConnection = new Redis(process.env.REDIS_URL!, {
   maxRetriesPerRequest: null, // Required for BullMQ
+  tls: {
+    rejectUnauthorized: false, // Required for Upstash
+  },
 });
 
 // Test Redis connection
