@@ -12,7 +12,7 @@ import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/auth';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication
@@ -21,7 +21,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const lead = await getLead(params.id);
+    const { id } = await params;
+    const lead = await getLead(id);
 
     if (!lead) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
@@ -29,7 +30,7 @@ export async function GET(
 
     return NextResponse.json(lead);
   } catch (error: any) {
-    console.error(`GET /api/leads/${params.id} error:`, error);
+    console.error(`GET /api/leads error:`, error);
     return NextResponse.json(
       { error: 'Failed to fetch lead', message: error.message },
       { status: 500 }
@@ -43,7 +44,7 @@ export async function GET(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication
@@ -52,7 +53,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const deleted = await deleteLead(params.id);
+    const { id } = await params;
+    const deleted = await deleteLead(id);
 
     if (!deleted) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
@@ -63,7 +65,7 @@ export async function DELETE(
       message: 'Lead deleted successfully',
     });
   } catch (error: any) {
-    console.error(`DELETE /api/leads/${params.id} error:`, error);
+    console.error(`DELETE /api/leads error:`, error);
     return NextResponse.json(
       { error: 'Failed to delete lead', message: error.message },
       { status: 500 }
