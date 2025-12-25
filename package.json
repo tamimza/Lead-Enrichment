@@ -11,6 +11,7 @@
     "type-check": "tsc --noEmit",
     "worker": "tsx scripts/run-worker.ts",
     "db:migrate": "tsx scripts/migrate.ts",
+    "db:migrate:prod": "tsx scripts/migrate-production.ts",
     "verify": "tsx scripts/verify-setup.ts"
   },
   "dependencies": {

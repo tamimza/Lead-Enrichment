@@ -132,7 +132,7 @@ export default function ConnectPage() {
                 name="fullName"
                 value={formData.fullName}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.fullName ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="Sarah Johnson"
@@ -154,7 +154,7 @@ export default function ConnectPage() {
                 name="companyName"
                 value={formData.companyName}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.companyName ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="Acme Corp"
@@ -176,7 +176,7 @@ export default function ConnectPage() {
                 name="jobTitle"
                 value={formData.jobTitle}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="VP of Engineering"
               />
             </div>
@@ -192,7 +192,7 @@ export default function ConnectPage() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.email ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="sarah@acme.com"
@@ -214,7 +214,7 @@ export default function ConnectPage() {
                 name="linkedinUrl"
                 value={formData.linkedinUrl}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.linkedinUrl ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="https://linkedin.com/in/yourprofile"
@@ -235,7 +235,7 @@ export default function ConnectPage() {
                 name="companyWebsite"
                 value={formData.companyWebsite}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.companyWebsite ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="https://acme.com"
