@@ -1,0 +1,45 @@
+{
+  "name": "lead-enrichment",
+  "version": "1.0.0",
+  "description": "Automated lead research and personalized email generation using Claude Agent SDK",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "worker": "tsx scripts/run-worker.ts",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "verify": "tsx scripts/verify-setup.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.0",
+    "@anthropic-ai/sdk": "^0.71.2",
+    "bullmq": "^5.0.0",
+    "dotenv": "^16.3.1",
+    "ioredis": "^5.3.2",
+    "next": "^16.0.0",
+    "pg": "^8.11.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hot-toast": "^2.4.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/pg": "^8.10.9",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.16",
+    "eslint": "^9.39.2",
+    "eslint-config-next": "^16.0.0",
+    "postcss": "^8.4.33",
+    "tailwindcss": "^3.4.1",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
