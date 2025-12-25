@@ -1,14 +1,4 @@
 {
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["iad1"],
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "REDIS_URL": "@redis_url",
-    "ANTHROPIC_API_KEY": "@anthropic_api_key",
-    "ADMIN_PASSWORD": "@admin_password",
-    "NEXT_PUBLIC_APP_URL": "@app_url"
-  }
+  "regions": ["iad1"]
 }
