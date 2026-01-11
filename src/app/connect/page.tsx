@@ -4,6 +4,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { LeadSchema } from '@/lib/validations';
 import type { LeadFormData } from '@/lib/validations';
@@ -108,14 +109,44 @@ export default function ConnectPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 py-12 px-4 sm:px-6 lg:px-8">
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-b border-gray-200 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-14">
+            <Link href="/connect" className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <span className="font-semibold text-gray-900">Lead Enrichment</span>
+            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/docs"
+                className="text-sm font-medium text-gray-600 hover:text-teal-600 transition-colors"
+              >
+                Documentation
+              </Link>
+              <Link
+                href="/admin"
+                className="text-sm font-medium text-gray-600 hover:text-teal-600 transition-colors"
+              >
+                Admin
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <div className="max-w-md mx-auto pt-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
             Connect With Us
           </h1>
           <p className="text-lg text-gray-600">
-            Share your information and we'll reach out with personalized insights
+            Share your information and we&apos;ll reach out with personalized insights
           </p>
         </div>
 
@@ -132,7 +163,7 @@ export default function ConnectPage() {
                 name="fullName"
                 value={formData.fullName}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 ${
                   errors.fullName ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="Sarah Johnson"
@@ -154,7 +185,7 @@ export default function ConnectPage() {
                 name="companyName"
                 value={formData.companyName}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 ${
                   errors.companyName ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="Acme Corp"
@@ -176,7 +207,7 @@ export default function ConnectPage() {
                 name="jobTitle"
                 value={formData.jobTitle}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
                 placeholder="VP of Engineering"
               />
             </div>
@@ -192,7 +223,7 @@ export default function ConnectPage() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 ${
                   errors.email ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="sarah@acme.com"
@@ -214,7 +245,7 @@ export default function ConnectPage() {
                 name="linkedinUrl"
                 value={formData.linkedinUrl}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 ${
                   errors.linkedinUrl ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="https://linkedin.com/in/yourprofile"
@@ -235,7 +266,7 @@ export default function ConnectPage() {
                 name="companyWebsite"
                 value={formData.companyWebsite}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 ${
                   errors.companyWebsite ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="https://acme.com"
@@ -249,7 +280,7 @@ export default function ConnectPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isSubmitting ? (
                 <>
