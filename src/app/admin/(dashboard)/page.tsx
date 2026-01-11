@@ -235,49 +235,71 @@ export default function AdminDashboard() {
 
       {/* Lead Detail Modal */}
       {selectedLead && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" onClick={() => setSelectedLead(null)}>
-          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-3xl shadow-lg rounded-md bg-white" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-2xl font-bold text-gray-900">
-                {selectedLead.fullName}
-              </h3>
-              <button
-                onClick={() => setSelectedLead(null)}
-                className="text-gray-400 hover:text-gray-600 text-2xl"
-              >
-                &times;
-              </button>
-            </div>
+        <div
+          className="fixed inset-0 z-50 overflow-hidden"
+          aria-modal="true"
+          role="dialog"
+        >
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-gray-600/50 backdrop-blur-sm"
+            onClick={() => setSelectedLead(null)}
+          />
 
-            <div className="space-y-4">
+          {/* Modal Container - Centered */}
+          <div className="fixed inset-0 flex items-center justify-center p-4">
+            <div
+              className="relative w-full max-w-2xl max-h-[90vh] bg-white rounded-xl shadow-2xl flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header - Fixed */}
+              <div className="flex-shrink-0 bg-white rounded-t-xl border-b border-gray-200 px-4 sm:px-6 py-4 flex justify-between items-center">
+                <div className="min-w-0 flex-1 pr-4">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
+                    {selectedLead.fullName}
+                  </h3>
+                  <p className="text-sm text-gray-500 truncate">{selectedLead.companyName}</p>
+                </div>
+                <button
+                  onClick={() => setSelectedLead(null)}
+                  className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Modal Content - Scrollable */}
+              <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-6">
               {/* Basic Info */}
               <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">Basic Information</h4>
-                <dl className="grid grid-cols-2 gap-4">
-                  <div>
-                    <dt className="text-xs text-gray-500">Company</dt>
-                    <dd className="text-sm text-gray-900">{selectedLead.companyName}</dd>
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Basic Information</h4>
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <dt className="text-xs text-gray-500 uppercase tracking-wide">Company</dt>
+                    <dd className="text-sm font-medium text-gray-900 mt-1">{selectedLead.companyName}</dd>
                   </div>
-                  <div>
-                    <dt className="text-xs text-gray-500">Title</dt>
-                    <dd className="text-sm text-gray-900">{selectedLead.jobTitle || 'N/A'}</dd>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <dt className="text-xs text-gray-500 uppercase tracking-wide">Title</dt>
+                    <dd className="text-sm font-medium text-gray-900 mt-1">{selectedLead.jobTitle || 'N/A'}</dd>
                   </div>
-                  <div>
-                    <dt className="text-xs text-gray-500">Email</dt>
-                    <dd className="text-sm text-gray-900">{selectedLead.email}</dd>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <dt className="text-xs text-gray-500 uppercase tracking-wide">Email</dt>
+                    <dd className="text-sm font-medium text-gray-900 mt-1 break-all">{selectedLead.email}</dd>
                   </div>
-                  <div>
-                    <dt className="text-xs text-gray-500">Status</dt>
-                    <dd>
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${STATUS_COLORS[selectedLead.status]}`}>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <dt className="text-xs text-gray-500 uppercase tracking-wide">Status</dt>
+                    <dd className="mt-1">
+                      <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${STATUS_COLORS[selectedLead.status]}`}>
                         {selectedLead.status}
                       </span>
                     </dd>
                   </div>
                   {selectedLead.linkedinUrl && (
-                    <div className="col-span-2">
-                      <dt className="text-xs text-gray-500">LinkedIn</dt>
-                      <dd className="text-sm text-blue-600">
+                    <div className="bg-gray-50 rounded-lg p-3 sm:col-span-2">
+                      <dt className="text-xs text-gray-500 uppercase tracking-wide">LinkedIn</dt>
+                      <dd className="text-sm text-teal-600 mt-1 break-all">
                         <a href={selectedLead.linkedinUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
                           {selectedLead.linkedinUrl}
                         </a>
@@ -285,9 +307,9 @@ export default function AdminDashboard() {
                     </div>
                   )}
                   {selectedLead.companyWebsite && (
-                    <div className="col-span-2">
-                      <dt className="text-xs text-gray-500">Company Website</dt>
-                      <dd className="text-sm text-blue-600">
+                    <div className="bg-gray-50 rounded-lg p-3 sm:col-span-2">
+                      <dt className="text-xs text-gray-500 uppercase tracking-wide">Company Website</dt>
+                      <dd className="text-sm text-teal-600 mt-1 break-all">
                         <a href={selectedLead.companyWebsite} target="_blank" rel="noopener noreferrer" className="hover:underline">
                           {selectedLead.companyWebsite}
                         </a>
@@ -300,22 +322,25 @@ export default function AdminDashboard() {
               {/* Enrichment Data */}
               {selectedLead.enrichmentData && (
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Enrichment Data</h4>
-                  <div className="bg-gray-50 p-4 rounded-md space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Enrichment Data</h4>
+                  <div className="bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-100 rounded-xl p-4 space-y-4">
                     <div>
-                      <dt className="text-xs text-gray-500 font-medium">Role Summary</dt>
-                      <dd className="text-sm text-gray-900 mt-1">{selectedLead.enrichmentData.role_summary}</dd>
+                      <dt className="text-xs text-teal-700 font-semibold uppercase tracking-wide">Role Summary</dt>
+                      <dd className="text-sm text-gray-800 mt-2 leading-relaxed">{selectedLead.enrichmentData.role_summary}</dd>
                     </div>
                     <div>
-                      <dt className="text-xs text-gray-500 font-medium">Company Focus</dt>
-                      <dd className="text-sm text-gray-900 mt-1">{selectedLead.enrichmentData.company_focus}</dd>
+                      <dt className="text-xs text-teal-700 font-semibold uppercase tracking-wide">Company Focus</dt>
+                      <dd className="text-sm text-gray-800 mt-2 leading-relaxed">{selectedLead.enrichmentData.company_focus}</dd>
                     </div>
                     <div>
-                      <dt className="text-xs text-gray-500 font-medium">Key Insights</dt>
-                      <dd className="text-sm text-gray-900 mt-1">
-                        <ul className="list-disc list-inside space-y-1">
+                      <dt className="text-xs text-teal-700 font-semibold uppercase tracking-wide">Key Insights</dt>
+                      <dd className="text-sm text-gray-800 mt-2">
+                        <ul className="space-y-2">
                           {selectedLead.enrichmentData.key_insights.map((insight, i) => (
-                            <li key={i}>{insight}</li>
+                            <li key={i} className="flex items-start gap-2">
+                              <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-teal-500 mt-2"></span>
+                              <span className="leading-relaxed">{insight}</span>
+                            </li>
                           ))}
                         </ul>
                       </dd>
@@ -327,17 +352,20 @@ export default function AdminDashboard() {
               {/* Draft Email */}
               {selectedLead.draftEmail && (
                 <div>
-                  <div className="flex justify-between items-center mb-2">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
                     <h4 className="text-sm font-semibold text-gray-700">Draft Email</h4>
                     <button
                       onClick={() => handleCopyEmail(selectedLead.draftEmail!)}
-                      className="text-sm text-blue-600 hover:text-blue-800"
+                      className="inline-flex items-center gap-1.5 text-sm text-teal-600 hover:text-teal-800 font-medium"
                     >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
                       Copy to Clipboard
                     </button>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-md">
-                    <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedLead.draftEmail}</p>
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                    <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">{selectedLead.draftEmail}</p>
                   </div>
                 </div>
               )}
@@ -345,27 +373,38 @@ export default function AdminDashboard() {
               {/* Error Message */}
               {selectedLead.status === 'failed' && selectedLead.errorMessage && (
                 <div>
-                  <h4 className="text-sm font-semibold text-red-700 mb-2">Error Details</h4>
-                  <div className="bg-red-50 p-4 rounded-md">
-                    <p className="text-sm text-red-900">{selectedLead.errorMessage}</p>
+                  <h4 className="text-sm font-semibold text-red-700 mb-3">Error Details</h4>
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                    <p className="text-sm text-red-800">{selectedLead.errorMessage}</p>
                   </div>
                 </div>
               )}
 
               {/* Timestamps */}
               <div className="pt-4 border-t border-gray-200">
-                <dl className="grid grid-cols-2 gap-4 text-xs">
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <dt className="text-gray-500">Created At</dt>
-                    <dd className="text-gray-900">{formatDate(selectedLead.createdAt)}</dd>
+                    <dt className="text-gray-500 uppercase tracking-wide">Created At</dt>
+                    <dd className="text-gray-900 font-medium mt-1">{formatDate(selectedLead.createdAt)}</dd>
                   </div>
                   {selectedLead.processedAt && (
                     <div>
-                      <dt className="text-gray-500">Processed At</dt>
-                      <dd className="text-gray-900">{formatDate(selectedLead.processedAt)}</dd>
+                      <dt className="text-gray-500 uppercase tracking-wide">Processed At</dt>
+                      <dd className="text-gray-900 font-medium mt-1">{formatDate(selectedLead.processedAt)}</dd>
                     </div>
                   )}
                 </dl>
+              </div>
+            </div>
+
+              {/* Modal Footer - Fixed */}
+              <div className="flex-shrink-0 bg-gray-50 rounded-b-xl border-t border-gray-200 px-4 sm:px-6 py-3 flex justify-end">
+                <button
+                  onClick={() => setSelectedLead(null)}
+                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-medium rounded-lg transition-colors"
+                >
+                  Close
+                </button>
               </div>
             </div>
           </div>

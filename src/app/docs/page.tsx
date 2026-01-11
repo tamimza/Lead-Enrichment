@@ -9,9 +9,10 @@ import Link from 'next/link';
 // Navigation structure
 const navigation = [
   {
-    title: 'General',
+    title: '',
     items: [
-      { name: 'Getting Started', href: '#getting-started' },
+      { name: 'Overview', href: '#overview' },
+      { name: 'Setup', href: '#setup' },
       { name: 'Architecture', href: '#architecture' },
       { name: 'Tech Stack', href: '#tech-stack' },
     ],
@@ -41,7 +42,7 @@ const navigation = [
 ];
 
 export default function DocsPage() {
-  const [activeSection, setActiveSection] = useState('getting-started');
+  const [activeSection, setActiveSection] = useState('overview');
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -58,11 +59,13 @@ export default function DocsPage() {
           </Link>
 
           <nav className="space-y-6">
-            {navigation.map((section) => (
-              <div key={section.title}>
-                <h3 className="text-sm font-semibold text-teal-700 uppercase tracking-wider mb-3">
-                  {section.title}
-                </h3>
+            {navigation.map((section, idx) => (
+              <div key={idx}>
+                {section.title && (
+                  <h3 className="text-sm font-semibold text-teal-700 uppercase tracking-wider mb-3">
+                    {section.title}
+                  </h3>
+                )}
                 <ul className="space-y-1">
                   {section.items.map((item) => (
                     <li key={item.name}>
@@ -95,36 +98,98 @@ export default function DocsPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
-            <span className="text-gray-900">Getting Started</span>
+            <span className="text-gray-900">Overview</span>
           </nav>
 
           {/* Page Title */}
           <div className="mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-3" id="getting-started">Getting Started</h1>
-            <p className="text-xl text-gray-600">Project overview and setup instructions.</p>
+            <h1 className="text-4xl font-bold text-gray-900 mb-3" id="overview">Lead Enrichment Platform</h1>
+            <p className="text-xl text-gray-600">AI-powered intelligence for sales outreach.</p>
           </div>
 
           {/* Content Sections */}
           <div className="prose prose-gray max-w-none">
-            {/* Overview */}
-            <section className="mb-12" id="overview">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Lead Enrichment Platform</h2>
+            {/* The Problem */}
+            <section className="mb-12">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">What Problem Does This Solve?</h2>
 
-              <h3 className="text-xl font-semibold text-gray-800 mb-3">Overview</h3>
+              <p className="text-gray-600 mb-6 text-lg">
+                Imagine a sales team with hundreds or thousands of leads - names, emails, companies, job titles.
+              </p>
+
+              <div className="bg-gray-50 rounded-xl p-6 mb-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">What they do today:</h3>
+                <ul className="space-y-2 text-gray-600">
+                  <li className="flex items-start gap-3">
+                    <span className="text-gray-400">1.</span>
+                    <span>Open LinkedIn</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-gray-400">2.</span>
+                    <span>Google the company</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-gray-400">3.</span>
+                    <span>Try to understand what the person does</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-gray-400">4.</span>
+                    <span>Think &quot;what should I say?&quot;</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-gray-400">5.</span>
+                    <span>Write a custom email</span>
+                  </li>
+                </ul>
+                <p className="text-gray-500 mt-4 text-sm">That takes 5-10 minutes per lead.</p>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4 mb-8">
+                <div className="bg-red-50 border border-red-100 rounded-xl p-6">
+                  <p className="text-red-800 font-semibold mb-2">Manual Process</p>
+                  <p className="text-3xl font-bold text-red-900">8-15 hours</p>
+                  <p className="text-red-600 text-sm">for 100 leads</p>
+                </div>
+                <div className="bg-teal-50 border border-teal-100 rounded-xl p-6">
+                  <p className="text-teal-800 font-semibold mb-2">With Lead Enrichment</p>
+                  <p className="text-3xl font-bold text-teal-900">5-10 seconds</p>
+                  <p className="text-teal-600 text-sm">per lead, fully automated</p>
+                </div>
+              </div>
+
+              <hr className="my-8 border-gray-200" />
+
+              {/* Intelligence Not Databases */}
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Intelligence, Not Databases</h2>
+
               <p className="text-gray-600 mb-4">
-                The Lead Enrichment Platform is an AI-powered solution that automates lead research
-                and generates personalized outreach emails. It replaces manual research with intelligent
-                automation using Claude AI.
+                We&apos;re not scraping LinkedIn. We&apos;re not buying contact databases. We&apos;re not crawling the web.
               </p>
+
               <p className="text-gray-600 mb-6">
-                This platform transforms basic lead information into rich profiles with AI-generated
-                insights and ready-to-send personalized emails.
+                <strong className="text-gray-900">We sell intelligence.</strong> You provide the basic lead info you already have,
+                and Claude AI generates intelligent insights about the person&apos;s role, their company&apos;s focus, and crafts
+                a personalized outreach email - all without the legal and ethical risks of data scraping.
               </p>
+
+              <div className="bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-100 rounded-xl p-6 mb-8">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-teal-900 mb-1">Claude gives you intelligence without the risk</p>
+                    <p className="text-teal-700 text-sm">No scraping. No data buying. No compliance headaches. Just smart, personalized outreach.</p>
+                  </div>
+                </div>
+              </div>
 
               <hr className="my-8 border-gray-200" />
 
               {/* Key Features */}
-              <h3 className="text-xl font-semibold text-gray-800 mb-4" id="key-features">Key Features</h3>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Key Features</h2>
               <div className="grid gap-4 mb-8">
                 <div className="border border-gray-200 rounded-lg p-4">
                   <h4 className="font-semibold text-gray-900 mb-1">AI-Powered Enrichment</h4>
@@ -146,13 +211,29 @@ export default function DocsPage() {
 
               <hr className="my-8 border-gray-200" />
 
-              {/* Quick Start */}
-              <h3 className="text-xl font-semibold text-gray-800 mb-4" id="quick-start">Quick Start</h3>
+              {/* Setup */}
+              <h2 className="text-2xl font-bold text-gray-900 mb-4" id="setup">Setup</h2>
+              <p className="text-gray-600 mb-4">
+                Get started by cloning the repository and following the setup instructions.
+              </p>
+
+              <a
+                href="https://github.com/tamimza/Lead-Enrichment"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-gray-900 text-white px-5 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors mb-6"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+                </svg>
+                View on GitHub
+              </a>
+
               <div className="bg-gray-900 rounded-lg p-4 mb-6 overflow-x-auto">
                 <pre className="text-sm text-gray-100">
 {`# Clone the repository
-git clone https://github.com/your-repo/lead-enrichment.git
-cd lead-enrichment
+git clone https://github.com/tamimza/Lead-Enrichment.git
+cd Lead-Enrichment
 
 # Install dependencies
 npm install
@@ -161,7 +242,7 @@ npm install
 cp .env.example .env.local
 
 # Run database migrations
-npm run db:migrate
+psql -d your_database -f migrations/001_create_leads.sql
 
 # Start development server
 npm run dev
@@ -174,7 +255,7 @@ npm run worker`}
               <hr className="my-8 border-gray-200" />
 
               {/* Architecture */}
-              <h3 className="text-xl font-semibold text-gray-800 mb-4" id="architecture">Architecture</h3>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4" id="architecture">Architecture</h2>
               <div className="bg-gray-50 rounded-lg p-6 mb-6 font-mono text-sm">
                 <pre className="text-gray-700 whitespace-pre-wrap">
 {`┌─────────────────────────────────────────────────────────────┐
@@ -197,7 +278,7 @@ npm run worker`}
               <hr className="my-8 border-gray-200" />
 
               {/* Tech Stack */}
-              <h3 className="text-xl font-semibold text-gray-800 mb-4" id="tech-stack">Tech Stack</h3>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4" id="tech-stack">Tech Stack</h2>
               <div className="overflow-x-auto mb-8">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -244,33 +325,8 @@ npm run worker`}
 
               <hr className="my-8 border-gray-200" />
 
-              {/* Data Flow */}
-              <h3 className="text-xl font-semibold text-gray-800 mb-4" id="data-flow">Data Flow</h3>
-
-              <h4 className="font-semibold text-gray-900 mb-2">1. Lead Submission</h4>
-              <p className="text-gray-600 mb-4">
-                User submits lead via <code className="bg-gray-100 px-1.5 py-0.5 rounded text-sm">/connect</code> form.
-                Data is validated with Zod, inserted into PostgreSQL with status <code className="bg-gray-100 px-1.5 py-0.5 rounded text-sm">pending</code>,
-                and a job is queued in BullMQ.
-              </p>
-
-              <h4 className="font-semibold text-gray-900 mb-2">2. Background Processing</h4>
-              <p className="text-gray-600 mb-4">
-                The worker picks up the job, updates status to <code className="bg-gray-100 px-1.5 py-0.5 rounded text-sm">processing</code>,
-                calls Claude API with the lead data, parses the structured response, and updates the database
-                with enrichment data and draft email.
-              </p>
-
-              <h4 className="font-semibold text-gray-900 mb-2">3. Admin Review</h4>
-              <p className="text-gray-600 mb-8">
-                Admins view enriched leads in the dashboard, review AI-generated insights, and copy personalized
-                email drafts for outreach.
-              </p>
-
-              <hr className="my-8 border-gray-200" />
-
               {/* AI Enrichment */}
-              <h3 className="text-xl font-semibold text-gray-800 mb-4" id="ai-enrichment">AI Enrichment</h3>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4" id="ai-enrichment">AI Enrichment</h2>
               <p className="text-gray-600 mb-4">
                 The enrichment engine uses Claude Sonnet to analyze lead data and generate structured insights:
               </p>
@@ -290,35 +346,10 @@ npm run worker`}
                 </pre>
               </div>
 
-              <h4 className="font-semibold text-gray-900 mb-2">JSON Extraction</h4>
-              <p className="text-gray-600 mb-4">
-                The system uses a multi-layer extraction strategy to handle Claude&apos;s varied response formats:
-              </p>
-              <div className="bg-gray-900 rounded-lg p-4 mb-6 overflow-x-auto">
-                <pre className="text-sm text-gray-100">
-{`function extractJSON(text: string): any {
-  // Try 1: Direct JSON parse
-  try { return JSON.parse(text); } catch {}
-
-  // Try 2: Extract from markdown code blocks
-  const codeBlock = text.match(/\`\`\`(?:json)?\\s*([\\s\\S]*?)\`\`\`/);
-  if (codeBlock) {
-    try { return JSON.parse(codeBlock[1]); } catch {}
-  }
-
-  // Try 3: Find JSON object pattern
-  const jsonMatch = text.match(/\\{[\\s\\S]*\\}/);
-  if (jsonMatch) return JSON.parse(jsonMatch[0]);
-
-  throw new Error('No valid JSON found');
-}`}
-                </pre>
-              </div>
-
               <hr className="my-8 border-gray-200" />
 
               {/* Queue System */}
-              <h3 className="text-xl font-semibold text-gray-800 mb-4" id="queue-system">Queue System</h3>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4" id="queue-system">Queue System</h2>
               <p className="text-gray-600 mb-4">
                 BullMQ provides production-grade job processing with these configurations:
               </p>
@@ -343,7 +374,7 @@ npm run worker`}
               <hr className="my-8 border-gray-200" />
 
               {/* Database */}
-              <h3 className="text-xl font-semibold text-gray-800 mb-4" id="database">Database Schema</h3>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4" id="database">Database Schema</h2>
               <div className="bg-gray-900 rounded-lg p-4 mb-6 overflow-x-auto">
                 <pre className="text-sm text-gray-100">
 {`CREATE TABLE leads (
@@ -380,9 +411,9 @@ CREATE INDEX idx_leads_email ON leads(email);`}
               <hr className="my-8 border-gray-200" />
 
               {/* API Endpoints */}
-              <h3 className="text-xl font-semibold text-gray-800 mb-4" id="api-endpoints">API Endpoints</h3>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4" id="api-endpoints">API Endpoints</h2>
 
-              <h4 className="font-semibold text-gray-900 mb-3">Public Endpoints</h4>
+              <h3 className="font-semibold text-gray-900 mb-3">Public Endpoints</h3>
               <div className="space-y-3 mb-6">
                 <div className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
@@ -400,7 +431,7 @@ CREATE INDEX idx_leads_email ON leads(email);`}
                 </div>
               </div>
 
-              <h4 className="font-semibold text-gray-900 mb-3">Protected Endpoints (Require Auth)</h4>
+              <h3 className="font-semibold text-gray-900 mb-3">Protected Endpoints (Require Auth)</h3>
               <div className="space-y-3 mb-8">
                 <div className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
@@ -435,7 +466,7 @@ CREATE INDEX idx_leads_email ON leads(email);`}
               <hr className="my-8 border-gray-200" />
 
               {/* Environment Setup */}
-              <h3 className="text-xl font-semibold text-gray-800 mb-4" id="environment-setup">Environment Setup</h3>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4" id="environment-setup">Environment Setup</h2>
               <p className="text-gray-600 mb-4">
                 Create a <code className="bg-gray-100 px-1.5 py-0.5 rounded text-sm">.env.local</code> file with the following variables:
               </p>
@@ -452,7 +483,6 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 # Admin Auth
 ADMIN_PASSWORD=your-secure-password
-SESSION_SECRET=random-32-char-string
 
 # Optional
 NODE_ENV=development`}
@@ -462,9 +492,9 @@ NODE_ENV=development`}
               <hr className="my-8 border-gray-200" />
 
               {/* Production */}
-              <h3 className="text-xl font-semibold text-gray-800 mb-4" id="production">Production Deployment</h3>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4" id="production">Production Deployment</h2>
 
-              <h4 className="font-semibold text-gray-900 mb-2">Recommended Architecture</h4>
+              <h3 className="font-semibold text-gray-900 mb-2">Recommended Architecture</h3>
               <div className="overflow-x-auto mb-6">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -494,7 +524,7 @@ NODE_ENV=development`}
                 </table>
               </div>
 
-              <h4 className="font-semibold text-gray-900 mb-2">Production Features</h4>
+              <h3 className="font-semibold text-gray-900 mb-2">Production Features</h3>
               <ul className="list-disc list-inside text-gray-600 space-y-1 mb-6">
                 <li>Security headers (HSTS, CSP, X-Frame-Options)</li>
                 <li>Connection pooling (20 max connections)</li>
