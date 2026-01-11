@@ -11,11 +11,17 @@ import { enrichLeadWithAPI as enrichLead } from '../src/agent/enrichment-worker-
 import { closeQueue, getQueueStats } from '../src/lib/queue';
 
 // Redis connection for worker
-const redisConnection = new Redis(process.env.REDIS_URL!, {
+// Only use TLS for cloud Redis (Upstash uses rediss://)
+const redisUrl = process.env.REDIS_URL!;
+const useTls = redisUrl.startsWith('rediss://');
+
+const redisConnection = new Redis(redisUrl, {
   maxRetriesPerRequest: null,
-  tls: {
-    rejectUnauthorized: false, // Required for Upstash
-  },
+  ...(useTls && {
+    tls: {
+      rejectUnauthorized: false, // Required for Upstash
+    },
+  }),
 });
 
 console.log('\n========================================');

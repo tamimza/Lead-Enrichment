@@ -5,11 +5,17 @@ import { Queue, QueueEvents } from 'bullmq';
 import Redis from 'ioredis';
 
 // Redis connection configuration
-const redisConnection = new Redis(process.env.REDIS_URL!, {
+// Only use TLS for cloud Redis (Upstash uses rediss://)
+const redisUrl = process.env.REDIS_URL!;
+const useTls = redisUrl.startsWith('rediss://');
+
+const redisConnection = new Redis(redisUrl, {
   maxRetriesPerRequest: null, // Required for BullMQ
-  tls: {
-    rejectUnauthorized: false, // Required for Upstash
-  },
+  ...(useTls && {
+    tls: {
+      rejectUnauthorized: false, // Required for Upstash
+    },
+  }),
 });
 
 // Test Redis connection
