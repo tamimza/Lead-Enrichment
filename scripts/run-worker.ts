@@ -6,8 +6,8 @@ import './env-loader';
 
 import { Worker } from 'bullmq';
 import Redis from 'ioredis';
-// Use API-based enrichment instead of Agent SDK (more reliable with API keys)
-import { enrichLeadWithAPI as enrichLead } from '../src/agent/enrichment-worker-alt';
+// Use Claude Agent SDK for agentic enrichment with MCP tools
+import { enrichLeadByTier } from '../src/agent/enrichment-agent';
 import { closeQueue, getQueueStats } from '../src/lib/queue';
 
 // Redis connection for worker
@@ -46,8 +46,8 @@ const worker = new Worker(
     console.log(`\n[Worker] Processing job ${job.id} for lead: ${leadId}`);
 
     try {
-      // Call the enrichment function
-      await enrichLead(leadId);
+      // Call the tiered enrichment function (standard or premium based on lead tier)
+      await enrichLeadByTier(leadId);
 
       console.log(`[Worker] Job ${job.id} completed successfully\n`);
       return { success: true, leadId };

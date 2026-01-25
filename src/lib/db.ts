@@ -2,7 +2,10 @@
 // PostgreSQL client with connection pooling and CRUD operations
 
 import { Pool } from 'pg';
-import type { Lead, LeadRow, LeadFormData, LeadStatus, EnrichmentData } from '@/types';
+import type { Lead, LeadRow, LeadFormData, LeadStatus, EnrichmentData, EnrichmentTier, EnrichmentSource } from '@/types';
+
+// Data retention period in days
+const DATA_RETENTION_DAYS = 90;
 
 // Create connection pool singleton
 export const pool = new Pool({
@@ -29,11 +32,15 @@ function rowToLead(row: LeadRow): Lead {
     linkedinUrl: row.linkedin_url || undefined,
     companyWebsite: row.company_website || undefined,
     status: row.status,
+    enrichmentTier: row.enrichment_tier || 'standard',
     enrichmentData: row.enrichment_data || undefined,
+    enrichmentSources: row.enrichment_sources || undefined,
+    emailSubject: row.email_subject || undefined,
     draftEmail: row.draft_email || undefined,
     errorMessage: row.error_message || undefined,
     createdAt: row.created_at,
     processedAt: row.processed_at || undefined,
+    expiresAt: row.expires_at || undefined,
   };
 }
 
@@ -41,11 +48,16 @@ function rowToLead(row: LeadRow): Lead {
  * Create a new lead in the database
  */
 export async function createLead(data: LeadFormData): Promise<Lead> {
+  // Calculate expiration date based on retention policy
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + DATA_RETENTION_DAYS);
+
   const query = `
     INSERT INTO leads (
-      full_name, company_name, job_title, email, linkedin_url, company_website
+      full_name, company_name, job_title, email, linkedin_url, company_website,
+      enrichment_tier, expires_at
     )
-    VALUES ($1, $2, $3, $4, $5, $6)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     RETURNING *
   `;
 
@@ -56,6 +68,8 @@ export async function createLead(data: LeadFormData): Promise<Lead> {
     data.email,
     data.linkedinUrl || null,
     data.companyWebsite || null,
+    data.enrichmentTier || 'standard',
+    expiresAt,
   ];
 
   try {
@@ -93,6 +107,8 @@ export async function updateLead(
   updates: {
     status?: LeadStatus;
     enrichmentData?: EnrichmentData;
+    enrichmentSources?: EnrichmentSource[];
+    emailSubject?: string;
     draftEmail?: string;
     errorMessage?: string;
     processedAt?: Date;
@@ -110,6 +126,16 @@ export async function updateLead(
   if (updates.enrichmentData !== undefined) {
     fields.push(`enrichment_data = $${paramIndex++}`);
     values.push(JSON.stringify(updates.enrichmentData));
+  }
+
+  if (updates.enrichmentSources !== undefined) {
+    fields.push(`enrichment_sources = $${paramIndex++}`);
+    values.push(JSON.stringify(updates.enrichmentSources));
+  }
+
+  if (updates.emailSubject !== undefined) {
+    fields.push(`email_subject = $${paramIndex++}`);
+    values.push(updates.emailSubject);
   }
 
   if (updates.draftEmail !== undefined) {
@@ -251,4 +277,33 @@ export async function testConnection(): Promise<boolean> {
  */
 export async function closePool(): Promise<void> {
   await pool.end();
+}
+
+/**
+ * Delete expired leads (for data retention policy compliance)
+ * Should be called periodically (e.g., daily cron job)
+ */
+export async function deleteExpiredLeads(): Promise<number> {
+  const query = `
+    DELETE FROM leads
+    WHERE expires_at < NOW()
+    RETURNING id
+  `;
+
+  const result = await pool.query(query);
+  return result.rowCount || 0;
+}
+
+/**
+ * Get leads by enrichment tier
+ */
+export async function getLeadsByTier(tier: EnrichmentTier): Promise<Lead[]> {
+  const query = `
+    SELECT * FROM leads
+    WHERE enrichment_tier = $1
+    ORDER BY created_at DESC
+  `;
+
+  const result = await pool.query<LeadRow>(query, [tier]);
+  return result.rows.map(rowToLead);
 }

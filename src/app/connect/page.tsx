@@ -18,8 +18,10 @@ export default function ConnectPage() {
     email: '',
     linkedinUrl: '',
     companyWebsite: '',
+    enrichmentTier: 'standard',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [consentChecked, setConsentChecked] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -85,7 +87,9 @@ export default function ConnectPage() {
         email: '',
         linkedinUrl: '',
         companyWebsite: '',
+        enrichmentTier: 'standard',
       });
+      setConsentChecked(false);
 
       // Optional: redirect to a success page
       // router.push('/connect/success');
@@ -276,10 +280,85 @@ export default function ConnectPage() {
               )}
             </div>
 
+            {/* Enrichment Tier */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Enrichment Level
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, enrichmentTier: 'standard' }))}
+                  className={`p-3 border-2 rounded-lg text-left transition-all ${
+                    formData.enrichmentTier === 'standard'
+                      ? 'border-teal-500 bg-teal-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="font-medium text-gray-900">Standard</div>
+                  <div className="text-xs text-gray-500 mt-1">Quick insights</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, enrichmentTier: 'medium' }))}
+                  className={`p-3 border-2 rounded-lg text-left transition-all ${
+                    formData.enrichmentTier === 'medium'
+                      ? 'border-amber-500 bg-amber-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="font-medium text-gray-900">Medium</div>
+                  <div className="text-xs text-gray-500 mt-1">Company research</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, enrichmentTier: 'premium' }))}
+                  className={`p-3 border-2 rounded-lg text-left transition-all ${
+                    formData.enrichmentTier === 'premium'
+                      ? 'border-purple-500 bg-purple-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="font-medium text-gray-900">Premium</div>
+                  <div className="text-xs text-gray-500 mt-1">Full web research</div>
+                </button>
+              </div>
+            </div>
+
+            {/* Enhanced Consent Disclosure */}
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <h4 className="text-sm font-medium text-gray-900">Data Usage Disclosure</h4>
+              <div className="text-xs text-gray-600 space-y-2">
+                <p>By submitting this form, you acknowledge that:</p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>We will use AI to research publicly available information about you and your company</li>
+                  {(formData.enrichmentTier === 'medium' || formData.enrichmentTier === 'premium') && (
+                    <li>We will access your company website and search public web sources</li>
+                  )}
+                  {formData.enrichmentTier === 'premium' && (
+                    <li>We may access your public LinkedIn profile for additional context</li>
+                  )}
+                  <li>We will generate a personalized outreach message based on our findings</li>
+                  <li>Your data will be retained for 90 days and then automatically deleted</li>
+                </ul>
+              </div>
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={consentChecked}
+                  onChange={(e) => setConsentChecked(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+                />
+                <span className="text-xs text-gray-700">
+                  I understand and consent to the data processing described above
+                </span>
+              </label>
+            </div>
+
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !consentChecked}
               className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isSubmitting ? (
@@ -297,7 +376,7 @@ export default function ConnectPage() {
           </form>
 
           <p className="mt-6 text-xs text-center text-gray-500">
-            By submitting this form, you agree to receive personalized outreach from our team.
+            Questions about our data practices? Contact us at privacy@example.com
           </p>
         </div>
       </div>

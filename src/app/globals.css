@@ -31,3 +31,18 @@ body {
     text-wrap: balance;
   }
 }
+
+/* Fix for form inputs in dark mode - ensure text is always visible */
+@layer base {
+  input,
+  textarea,
+  select {
+    color: rgb(17, 24, 39) !important; /* gray-900 */
+    background-color: white !important;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: rgb(156, 163, 175) !important; /* gray-400 */
+  }
+}

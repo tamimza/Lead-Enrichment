@@ -14,6 +14,12 @@ const STATUS_COLORS: Record<LeadStatus, string> = {
   failed: 'bg-red-100 text-red-800',
 };
 
+const TIER_COLORS: Record<string, string> = {
+  standard: 'bg-gray-100 text-gray-700',
+  medium: 'bg-amber-100 text-amber-800',
+  premium: 'bg-purple-100 text-purple-800',
+};
+
 export default function AdminDashboard() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [pagination, setPagination] = useState({
@@ -99,87 +105,124 @@ export default function AdminDashboard() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Leads Dashboard
-        </h2>
-        <p className="text-gray-600">
-          Total: {pagination.total} leads
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Leads Dashboard
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Manage and track your enriched leads
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="bg-white border border-gray-200 rounded-xl px-4 py-2 shadow-sm">
+              <span className="text-2xl font-bold text-gray-900">{pagination.total}</span>
+              <span className="text-sm text-gray-500 ml-2">total leads</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
-      <div className="mb-6 flex items-center space-x-4">
-        <label htmlFor="status-filter" className="text-sm font-medium text-gray-700">
-          Filter by status:
-        </label>
-        <select
-          id="status-filter"
-          value={statusFilter}
-          onChange={(e) => {
-            setStatusFilter(e.target.value as LeadStatus | '');
-            setPagination((prev) => ({ ...prev, page: 1 }));
-          }}
-          className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">All</option>
-          <option value="pending">Pending</option>
-          <option value="processing">Processing</option>
-          <option value="enriched">Enriched</option>
-          <option value="failed">Failed</option>
-        </select>
+      <div className="mb-6 bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            <span className="text-sm font-medium text-gray-600">Filter by status</span>
+          </div>
+          <select
+            id="status-filter"
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value as LeadStatus | '');
+              setPagination((prev) => ({ ...prev, page: 1 }));
+            }}
+            className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent cursor-pointer hover:bg-gray-100 transition-colors"
+          >
+            <option value="">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="processing">Processing</option>
+            <option value="enriched">Enriched</option>
+            <option value="failed">Failed</option>
+          </select>
+          <button
+            onClick={() => fetchLeads()}
+            className="ml-auto p-2 text-gray-500 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+            title="Refresh"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Loading State */}
       {isLoading ? (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading leads...</p>
+        <div className="text-center py-16 bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-teal-600 border-t-transparent mx-auto"></div>
+          <p className="mt-4 text-sm text-gray-500">Loading leads...</p>
         </div>
       ) : leads.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg shadow">
-          <p className="text-gray-600">No leads found</p>
+        <div className="text-center py-16 bg-white rounded-xl border border-gray-200 shadow-sm">
+          <svg className="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+          </svg>
+          <p className="text-gray-500">No leads found</p>
+          <p className="text-sm text-gray-400 mt-1">Leads will appear here once submitted</p>
         </div>
       ) : (
         <>
           {/* Leads Table */}
-          <div className="bg-white shadow-md rounded-lg overflow-hidden">
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <thead>
+                <tr className="bg-gray-50/80">
+                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Company
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Email
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Tier
+                  </th>
+                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Created
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-100">
                 {leads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {lead.fullName}
+                  <tr key={lead.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{lead.fullName}</div>
+                      {lead.jobTitle && <div className="text-xs text-gray-400 mt-0.5">{lead.jobTitle}</div>}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {lead.companyName}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-mono">
                       {lead.email}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${STATUS_COLORS[lead.status]}`}>
+                      <span className={`px-2.5 py-1 inline-flex text-xs font-medium rounded-md ${TIER_COLORS[lead.enrichmentTier || 'standard']}`}>
+                        {lead.enrichmentTier || 'standard'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2.5 py-1 inline-flex text-xs font-medium rounded-md ${STATUS_COLORS[lead.status]}`}>
                         {lead.status}
                       </span>
                     </td>
@@ -187,18 +230,25 @@ export default function AdminDashboard() {
                       {formatDate(lead.createdAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-3">
+                      <div className="flex items-center space-x-2">
                         <button
                           onClick={() => setSelectedLead(lead)}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="View Details"
                         >
-                          View Details
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
                         </button>
                         <button
                           onClick={() => handleDelete(lead.id, lead.fullName)}
-                          className="text-red-600 hover:text-red-900"
+                          className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete"
                         >
-                          Delete
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
                         </button>
                       </div>
                     </td>
@@ -209,24 +259,30 @@ export default function AdminDashboard() {
           </div>
 
           {/* Pagination */}
-          <div className="mt-6 flex items-center justify-between">
-            <div className="text-sm text-gray-700">
-              Page {pagination.page} of {pagination.totalPages}
+          <div className="mt-6 flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm">
+            <div className="text-sm text-gray-600">
+              Page <span className="font-medium text-gray-900">{pagination.page}</span> of <span className="font-medium text-gray-900">{pagination.totalPages}</span>
             </div>
-            <div className="flex space-x-2">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => handlePageChange(pagination.page - 1)}
                 disabled={pagination.page === 1}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 bg-white hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-200 transition-colors"
               >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
                 Previous
               </button>
               <button
                 onClick={() => handlePageChange(pagination.page + 1)}
                 disabled={pagination.page >= pagination.totalPages}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 bg-white hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-200 transition-colors"
               >
                 Next
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </button>
             </div>
           </div>
@@ -296,6 +352,14 @@ export default function AdminDashboard() {
                       </span>
                     </dd>
                   </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <dt className="text-xs text-gray-500 uppercase tracking-wide">Enrichment Tier</dt>
+                    <dd className="mt-1">
+                      <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${TIER_COLORS[selectedLead.enrichmentTier || 'standard']}`}>
+                        {selectedLead.enrichmentTier || 'standard'}
+                      </span>
+                    </dd>
+                  </div>
                   {selectedLead.linkedinUrl && (
                     <div className="bg-gray-50 rounded-lg p-3 sm:col-span-2">
                       <dt className="text-xs text-gray-500 uppercase tracking-wide">LinkedIn</dt>
@@ -322,7 +386,19 @@ export default function AdminDashboard() {
               {/* Enrichment Data */}
               {selectedLead.enrichmentData && (
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Enrichment Data</h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-semibold text-gray-700">Enrichment Data</h4>
+                    {selectedLead.enrichmentData.confidence_score !== undefined && (
+                      <span className="text-xs text-gray-500">
+                        Confidence: {selectedLead.enrichmentData.confidence_score}%
+                        {selectedLead.enrichmentData.data_freshness && (
+                          <span className="ml-2 px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
+                            {selectedLead.enrichmentData.data_freshness}
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </div>
                   <div className="bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-100 rounded-xl p-4 space-y-4">
                     <div>
                       <dt className="text-xs text-teal-700 font-semibold uppercase tracking-wide">Role Summary</dt>
@@ -345,6 +421,90 @@ export default function AdminDashboard() {
                         </ul>
                       </dd>
                     </div>
+                    {/* Premium enrichment: Company Info */}
+                    {selectedLead.enrichmentData.company_info && (
+                      <div className="pt-3 border-t border-teal-200">
+                        <dt className="text-xs text-teal-700 font-semibold uppercase tracking-wide mb-2">Company Details</dt>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          {selectedLead.enrichmentData.company_info.industry && (
+                            <div><span className="text-gray-500">Industry:</span> {selectedLead.enrichmentData.company_info.industry}</div>
+                          )}
+                          {selectedLead.enrichmentData.company_info.size && (
+                            <div><span className="text-gray-500">Size:</span> {selectedLead.enrichmentData.company_info.size}</div>
+                          )}
+                        </div>
+                        {selectedLead.enrichmentData.company_info.description && (
+                          <p className="text-sm text-gray-700 mt-2">{selectedLead.enrichmentData.company_info.description}</p>
+                        )}
+                        {selectedLead.enrichmentData.company_info.products_services && selectedLead.enrichmentData.company_info.products_services.length > 0 && (
+                          <div className="mt-2">
+                            <span className="text-xs text-gray-500">Products/Services: </span>
+                            <span className="text-sm">{selectedLead.enrichmentData.company_info.products_services.join(', ')}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {/* Premium enrichment: Challenges & Value Props */}
+                    {selectedLead.enrichmentData.likely_challenges && selectedLead.enrichmentData.likely_challenges.length > 0 && (
+                      <div className="pt-3 border-t border-teal-200">
+                        <dt className="text-xs text-teal-700 font-semibold uppercase tracking-wide">Likely Challenges</dt>
+                        <dd className="text-sm text-gray-800 mt-2">
+                          <ul className="space-y-1">
+                            {selectedLead.enrichmentData.likely_challenges.map((challenge, i) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-orange-400 mt-2"></span>
+                                <span>{challenge}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </dd>
+                      </div>
+                    )}
+                    {selectedLead.enrichmentData.talking_points && selectedLead.enrichmentData.talking_points.length > 0 && (
+                      <div className="pt-3 border-t border-teal-200">
+                        <dt className="text-xs text-teal-700 font-semibold uppercase tracking-wide">Conversation Starters</dt>
+                        <dd className="text-sm text-gray-800 mt-2">
+                          <ul className="space-y-1">
+                            {selectedLead.enrichmentData.talking_points.map((point, i) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-purple-400 mt-2"></span>
+                                <span>{point}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </dd>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Enrichment Sources */}
+              {selectedLead.enrichmentSources && selectedLead.enrichmentSources.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Data Sources</h4>
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-2">
+                    {selectedLead.enrichmentSources.map((source, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm">
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          source.type === 'web_search' ? 'bg-blue-100 text-blue-700' :
+                          source.type === 'web_fetch' ? 'bg-green-100 text-green-700' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>
+                          {source.type.replace('_', ' ')}
+                        </span>
+                        {source.url && (
+                          <a href={source.url} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:underline truncate max-w-xs">
+                            {source.url}
+                          </a>
+                        )}
+                        {source.data_points.length > 0 && (
+                          <span className="text-gray-400 text-xs">
+                            ({source.data_points.length} data points)
+                          </span>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -382,7 +542,7 @@ export default function AdminDashboard() {
 
               {/* Timestamps */}
               <div className="pt-4 border-t border-gray-200">
-                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <dl className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                   <div>
                     <dt className="text-gray-500 uppercase tracking-wide">Created At</dt>
                     <dd className="text-gray-900 font-medium mt-1">{formatDate(selectedLead.createdAt)}</dd>
@@ -391,6 +551,12 @@ export default function AdminDashboard() {
                     <div>
                       <dt className="text-gray-500 uppercase tracking-wide">Processed At</dt>
                       <dd className="text-gray-900 font-medium mt-1">{formatDate(selectedLead.processedAt)}</dd>
+                    </div>
+                  )}
+                  {selectedLead.expiresAt && (
+                    <div>
+                      <dt className="text-gray-500 uppercase tracking-wide">Expires At</dt>
+                      <dd className="text-gray-900 font-medium mt-1">{formatDate(selectedLead.expiresAt)}</dd>
                     </div>
                   )}
                 </dl>
