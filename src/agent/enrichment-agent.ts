@@ -2,7 +2,7 @@
 // Uses Claude Agent SDK's query() with MCP tools and structured output
 // Now supports database-driven configuration
 
-import { query, tool, createSdkMcpServer } from '@anthropic-ai/claude-agent-sdk';
+import { query, createSdkMcpServer } from '@anthropic-ai/claude-agent-sdk';
 import { getLead, updateLead, updateStatus } from '@/lib/db';
 import { createAuditEntry, completeAuditEntry } from '@/lib/audit';
 import { loadConfigForTier, getEffectiveConfig, applyBlacklistToContent, type LoadedConfig } from '@/lib/config-loader';
@@ -14,7 +14,8 @@ import type { Lead, EnrichmentSource } from '@/types';
 import { categorizeTools } from '@/lib/tool-config';
 
 // Map of MCP tool IDs to their implementations
-const MCP_TOOL_MAP: Record<string, ReturnType<typeof tool>> = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const MCP_TOOL_MAP: Record<string, any> = {
   'scrape_company_website': scrapeCompanyWebsiteTool,
   'scrape_linkedin': scrapeLinkedinTool,
 };
