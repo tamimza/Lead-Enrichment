@@ -5,9 +5,17 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
+import { Loader2, Zap } from 'lucide-react';
 import { LeadSchema } from '@/lib/validations';
 import type { LeadFormData } from '@/lib/validations';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 
 export default function ConnectPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,7 +67,7 @@ export default function ConnectPage() {
         if (response.status === 400 && errorData.details) {
           // Validation errors
           const fieldErrors: Record<string, string> = {};
-          errorData.details.forEach((err: any) => {
+          errorData.details.forEach((err: { path: string[]; message: string }) => {
             const field = err.path[0];
             fieldErrors[field] = err.message;
           });
@@ -90,14 +98,12 @@ export default function ConnectPage() {
         enrichmentTier: 'standard',
       });
       setConsentChecked(false);
-
-      // Optional: redirect to a success page
-      // router.push('/connect/success');
-    } catch (error: any) {
-      if (error.name === 'ZodError') {
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'name' in error && (error as { name: string }).name === 'ZodError' && 'errors' in error) {
         // Client-side validation errors
+        const zodError = error as { errors: Array<{ path: string[]; message: string }> };
         const fieldErrors: Record<string, string> = {};
-        error.errors.forEach((err: any) => {
+        zodError.errors.forEach((err) => {
           const field = err.path[0];
           fieldErrors[field] = err.message;
         });
@@ -105,37 +111,40 @@ export default function ConnectPage() {
         toast.error('Please fix the errors in the form');
       } else {
         toast.error('Failed to submit. Please try again.');
-        console.error('Form submission error:', error);
       }
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const tiers = [
+    { id: 'standard', name: 'Standard', description: 'Quick insights', color: 'border-primary bg-primary/5' },
+    { id: 'medium', name: 'Medium', description: 'Company research', color: 'border-amber-500 bg-amber-50' },
+    { id: 'premium', name: 'Premium', description: 'Full web research', color: 'border-purple-500 bg-purple-50' },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 py-12 px-4 sm:px-6 lg:px-8">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-b border-gray-200 z-10">
+      <nav className="fixed top-0 left-0 right-0 bg-background/80 backdrop-blur-sm border-b z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
             <Link href="/connect" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <Zap className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="font-semibold text-gray-900">Lead Enrichment</span>
+              <span className="font-semibold">Lead Enrichment</span>
             </Link>
             <div className="flex items-center gap-4">
               <Link
                 href="/docs"
-                className="text-sm font-medium text-gray-600 hover:text-teal-600 transition-colors"
+                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               >
                 Documentation
               </Link>
               <Link
                 href="/admin"
-                className="text-sm font-medium text-gray-600 hover:text-teal-600 transition-colors"
+                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               >
                 Admin
               </Link>
@@ -146,239 +155,199 @@ export default function ConnectPage() {
 
       <div className="max-w-md mx-auto pt-8">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold mb-2">
             Connect With Us
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-muted-foreground">
             Share your information and we&apos;ll reach out with personalized insights
           </p>
         </div>
 
-        <div className="bg-white shadow-lg rounded-lg px-8 py-10">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Full Name */}
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="fullName"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                  errors.fullName ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Sarah Johnson"
-                required
-              />
-              {errors.fullName && (
-                <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
-              )}
-            </div>
-
-            {/* Company Name */}
-            <div>
-              <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-1">
-                Company Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="companyName"
-                name="companyName"
-                value={formData.companyName}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                  errors.companyName ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Acme Corp"
-                required
-              />
-              {errors.companyName && (
-                <p className="mt-1 text-sm text-red-600">{errors.companyName}</p>
-              )}
-            </div>
-
-            {/* Job Title */}
-            <div>
-              <label htmlFor="jobTitle" className="block text-sm font-medium text-gray-700 mb-1">
-                Job Title
-              </label>
-              <input
-                type="text"
-                id="jobTitle"
-                name="jobTitle"
-                value={formData.jobTitle}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                placeholder="VP of Engineering"
-              />
-            </div>
-
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                  errors.email ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="sarah@acme.com"
-                required
-              />
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-              )}
-            </div>
-
-            {/* LinkedIn URL */}
-            <div>
-              <label htmlFor="linkedinUrl" className="block text-sm font-medium text-gray-700 mb-1">
-                LinkedIn Profile
-              </label>
-              <input
-                type="url"
-                id="linkedinUrl"
-                name="linkedinUrl"
-                value={formData.linkedinUrl}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                  errors.linkedinUrl ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="https://linkedin.com/in/yourprofile"
-              />
-              {errors.linkedinUrl && (
-                <p className="mt-1 text-sm text-red-600">{errors.linkedinUrl}</p>
-              )}
-            </div>
-
-            {/* Company Website */}
-            <div>
-              <label htmlFor="companyWebsite" className="block text-sm font-medium text-gray-700 mb-1">
-                Company Website
-              </label>
-              <input
-                type="url"
-                id="companyWebsite"
-                name="companyWebsite"
-                value={formData.companyWebsite}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                  errors.companyWebsite ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="https://acme.com"
-              />
-              {errors.companyWebsite && (
-                <p className="mt-1 text-sm text-red-600">{errors.companyWebsite}</p>
-              )}
-            </div>
-
-            {/* Enrichment Tier */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Enrichment Level
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setFormData((prev) => ({ ...prev, enrichmentTier: 'standard' }))}
-                  className={`p-3 border-2 rounded-lg text-left transition-all ${
-                    formData.enrichmentTier === 'standard'
-                      ? 'border-teal-500 bg-teal-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="font-medium text-gray-900">Standard</div>
-                  <div className="text-xs text-gray-500 mt-1">Quick insights</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData((prev) => ({ ...prev, enrichmentTier: 'medium' }))}
-                  className={`p-3 border-2 rounded-lg text-left transition-all ${
-                    formData.enrichmentTier === 'medium'
-                      ? 'border-amber-500 bg-amber-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="font-medium text-gray-900">Medium</div>
-                  <div className="text-xs text-gray-500 mt-1">Company research</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData((prev) => ({ ...prev, enrichmentTier: 'premium' }))}
-                  className={`p-3 border-2 rounded-lg text-left transition-all ${
-                    formData.enrichmentTier === 'premium'
-                      ? 'border-purple-500 bg-purple-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="font-medium text-gray-900">Premium</div>
-                  <div className="text-xs text-gray-500 mt-1">Full web research</div>
-                </button>
-              </div>
-            </div>
-
-            {/* Enhanced Consent Disclosure */}
-            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-              <h4 className="text-sm font-medium text-gray-900">Data Usage Disclosure</h4>
-              <div className="text-xs text-gray-600 space-y-2">
-                <p>By submitting this form, you acknowledge that:</p>
-                <ul className="list-disc list-inside space-y-1 ml-2">
-                  <li>We will use AI to research publicly available information about you and your company</li>
-                  {(formData.enrichmentTier === 'medium' || formData.enrichmentTier === 'premium') && (
-                    <li>We will access your company website and search public web sources</li>
-                  )}
-                  {formData.enrichmentTier === 'premium' && (
-                    <li>We may access your public LinkedIn profile for additional context</li>
-                  )}
-                  <li>We will generate a personalized outreach message based on our findings</li>
-                  <li>Your data will be retained for 90 days and then automatically deleted</li>
-                </ul>
-              </div>
-              <label className="flex items-start gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={consentChecked}
-                  onChange={(e) => setConsentChecked(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+        <Card>
+          <CardContent className="pt-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Full Name */}
+              <div className="space-y-2">
+                <Label htmlFor="fullName">
+                  Full Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="fullName"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  placeholder="Sarah Johnson"
+                  className={cn(errors.fullName && 'border-destructive')}
+                  required
                 />
-                <span className="text-xs text-gray-700">
-                  I understand and consent to the data processing described above
-                </span>
-              </label>
-            </div>
+                {errors.fullName && (
+                  <p className="text-sm text-destructive">{errors.fullName}</p>
+                )}
+              </div>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting || !consentChecked}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isSubmitting ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Submitting...
-                </>
-              ) : (
-                'Submit'
-              )}
-            </button>
-          </form>
+              {/* Company Name */}
+              <div className="space-y-2">
+                <Label htmlFor="companyName">
+                  Company Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="companyName"
+                  name="companyName"
+                  value={formData.companyName}
+                  onChange={handleChange}
+                  placeholder="Acme Corp"
+                  className={cn(errors.companyName && 'border-destructive')}
+                  required
+                />
+                {errors.companyName && (
+                  <p className="text-sm text-destructive">{errors.companyName}</p>
+                )}
+              </div>
 
-          <p className="mt-6 text-xs text-center text-gray-500">
-            Questions about our data practices? Contact us at privacy@example.com
-          </p>
-        </div>
+              {/* Job Title */}
+              <div className="space-y-2">
+                <Label htmlFor="jobTitle">Job Title</Label>
+                <Input
+                  id="jobTitle"
+                  name="jobTitle"
+                  value={formData.jobTitle}
+                  onChange={handleChange}
+                  placeholder="VP of Engineering"
+                />
+              </div>
+
+              {/* Email */}
+              <div className="space-y-2">
+                <Label htmlFor="email">
+                  Email Address <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="sarah@acme.com"
+                  className={cn(errors.email && 'border-destructive')}
+                  required
+                />
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email}</p>
+                )}
+              </div>
+
+              {/* LinkedIn URL */}
+              <div className="space-y-2">
+                <Label htmlFor="linkedinUrl">LinkedIn Profile</Label>
+                <Input
+                  type="url"
+                  id="linkedinUrl"
+                  name="linkedinUrl"
+                  value={formData.linkedinUrl}
+                  onChange={handleChange}
+                  placeholder="https://linkedin.com/in/yourprofile"
+                  className={cn(errors.linkedinUrl && 'border-destructive')}
+                />
+                {errors.linkedinUrl && (
+                  <p className="text-sm text-destructive">{errors.linkedinUrl}</p>
+                )}
+              </div>
+
+              {/* Company Website */}
+              <div className="space-y-2">
+                <Label htmlFor="companyWebsite">Company Website</Label>
+                <Input
+                  type="url"
+                  id="companyWebsite"
+                  name="companyWebsite"
+                  value={formData.companyWebsite}
+                  onChange={handleChange}
+                  placeholder="https://acme.com"
+                  className={cn(errors.companyWebsite && 'border-destructive')}
+                />
+                {errors.companyWebsite && (
+                  <p className="text-sm text-destructive">{errors.companyWebsite}</p>
+                )}
+              </div>
+
+              {/* Enrichment Tier */}
+              <div className="space-y-2">
+                <Label>Enrichment Level</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {tiers.map((tier) => (
+                    <button
+                      key={tier.id}
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, enrichmentTier: tier.id as 'standard' | 'medium' | 'premium' }))}
+                      className={cn(
+                        'p-3 border-2 rounded-lg text-left transition-all',
+                        formData.enrichmentTier === tier.id
+                          ? tier.color
+                          : 'border-border hover:border-muted-foreground'
+                      )}
+                    >
+                      <div className="font-medium">{tier.name}</div>
+                      <div className="text-xs text-muted-foreground mt-1">{tier.description}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Enhanced Consent Disclosure */}
+              <Card className="bg-muted/50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Data Usage Disclosure</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="text-xs text-muted-foreground space-y-2">
+                    <p>By submitting this form, you acknowledge that:</p>
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                      <li>We will use AI to research publicly available information about you and your company</li>
+                      {(formData.enrichmentTier === 'medium' || formData.enrichmentTier === 'premium') && (
+                        <li>We will access your company website and search public web sources</li>
+                      )}
+                      {formData.enrichmentTier === 'premium' && (
+                        <li>We may access your public LinkedIn profile for additional context</li>
+                      )}
+                      <li>We will generate a personalized outreach message based on our findings</li>
+                      <li>Your data will be retained for 90 days and then automatically deleted</li>
+                    </ul>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="consent"
+                      checked={consentChecked}
+                      onCheckedChange={setConsentChecked}
+                    />
+                    <Label htmlFor="consent" className="text-xs cursor-pointer">
+                      I understand and consent to the data processing described above
+                    </Label>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                disabled={isSubmitting || !consentChecked}
+                className="w-full"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  'Submit'
+                )}
+              </Button>
+            </form>
+
+            <p className="mt-6 text-xs text-center text-muted-foreground">
+              Questions about our data practices? Contact us at privacy@example.com
+            </p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

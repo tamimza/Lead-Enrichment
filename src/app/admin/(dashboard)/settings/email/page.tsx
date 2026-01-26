@@ -2,15 +2,39 @@
 
 import { useState, useEffect, useContext } from 'react';
 import { SettingsContext } from '../layout';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
+import {
+  Mail, MessageSquare, Sparkles, Type, AlignLeft,
+  GripVertical, Plus, Pencil, Trash2, Loader2,
+  CheckCircle2, Briefcase, Coffee, FileText, Users
+} from 'lucide-react';
 import type { EmailTemplate, EmailSection, EmailTone } from '@/types/enrichment-config';
 
-const TONES: { value: EmailTone; label: string }[] = [
-  { value: 'professional', label: 'Professional' },
-  { value: 'friendly', label: 'Friendly' },
-  { value: 'casual', label: 'Casual' },
-  { value: 'formal', label: 'Formal' },
-  { value: 'conversational', label: 'Conversational' },
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
+
+const TONES: { value: EmailTone; label: string; description: string; icon: React.ReactNode }[] = [
+  { value: 'professional', label: 'Professional', description: 'Business-focused, clear and direct', icon: <Briefcase className="w-5 h-5" /> },
+  { value: 'friendly', label: 'Friendly', description: 'Warm and approachable tone', icon: <Users className="w-5 h-5" /> },
+  { value: 'casual', label: 'Casual', description: 'Relaxed and conversational', icon: <Coffee className="w-5 h-5" /> },
+  { value: 'formal', label: 'Formal', description: 'Traditional business style', icon: <FileText className="w-5 h-5" /> },
+  { value: 'conversational', label: 'Conversational', description: 'Natural dialogue feel', icon: <MessageSquare className="w-5 h-5" /> },
 ];
 
 export default function EmailTemplatePage() {
@@ -101,7 +125,7 @@ export default function EmailTemplatePage() {
       });
 
       if (response.ok) {
-        toast.success('Template saved');
+        toast.success('Template saved successfully');
         await fetchTemplate();
       } else {
         toast.error('Failed to save template');
@@ -154,239 +178,380 @@ export default function EmailTemplatePage() {
 
   if (!activeConfig) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-        <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
-        <p className="text-gray-600 font-medium">No Active Configuration</p>
-        <p className="text-sm text-gray-500 mt-1">Create and activate a configuration first to manage the email template.</p>
-      </div>
+      <Card>
+        <CardContent className="py-12">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+              <Mail className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="font-semibold text-lg">No Active Configuration</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Create and activate a configuration first to manage the email template.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-        <div className="animate-spin w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full mx-auto"></div>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Tone & Style */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Tone & Style</h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email Tone</label>
-            <select
-              value={tone}
-              onChange={(e) => setTone(e.target.value as EmailTone)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-            >
-              {TONES.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Subject Template</label>
-            <input
-              type="text"
-              value={subjectTemplate}
-              onChange={(e) => setSubjectTemplate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-              placeholder="Quick question about {{company_name}}"
-            />
-          </div>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Mail className="w-5 h-5 text-primary" />
+            Email Template
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Customize how AI generates outreach emails
+          </p>
         </div>
-
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Writing Style Instructions</label>
-          <textarea
-            value={writingStyle}
-            onChange={(e) => setWritingStyle(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-            rows={2}
-            placeholder="Use short sentences. Avoid jargon. Be direct and value-focused."
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Opening Style</label>
-            <textarea
-              value={openingStyle}
-              onChange={(e) => setOpeningStyle(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-              rows={2}
-              placeholder="Start with a personalized reference to their recent work or company news"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Closing Style</label>
-            <textarea
-              value={closingStyle}
-              onChange={(e) => setClosingStyle(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-              rows={2}
-              placeholder="End with a clear, low-commitment call to action"
-            />
-          </div>
-        </div>
+        <Button onClick={handleSave} disabled={isSaving}>
+          {isSaving ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              Save Template
+            </>
+          )}
+        </Button>
       </div>
 
-      {/* Length Constraints */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Length Constraints</h2>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Min Paragraphs</label>
-            <input
-              type="number"
-              value={minParagraphs}
-              onChange={(e) => setMinParagraphs(parseInt(e.target.value))}
-              min={1}
-              max={10}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-            />
+      {/* Tone Selection */}
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <Sparkles className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Email Tone</CardTitle>
+              <CardDescription>Select the voice and style of your emails</CardDescription>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Max Paragraphs</label>
-            <input
-              type="number"
-              value={maxParagraphs}
-              onChange={(e) => setMaxParagraphs(parseInt(e.target.value))}
-              min={1}
-              max={20}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Email Sections */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Email Sections</h2>
-            <p className="text-sm text-gray-500">Define the structure of the email. Drag to reorder.</p>
-          </div>
-          <button
-            onClick={() => {
-              setEditingSection(null);
-              setShowSectionModal(true);
-            }}
-            className="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition-colors"
-          >
-            Add Section
-          </button>
-        </div>
-
-        {sections.length === 0 ? (
-          <div className="text-center py-8 bg-gray-50 rounded-lg">
-            <p className="text-gray-500">No sections defined yet.</p>
-            <p className="text-sm text-gray-400 mt-1">Add sections to structure the email output.</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {sections.map((section, index) => (
-              <div
-                key={section.id}
-                draggable
-                onDragStart={() => handleDragStart(index)}
-                onDragOver={(e) => handleDragOver(e, index)}
-                onDragEnd={handleDragEnd}
-                className={`flex items-center gap-3 p-4 rounded-lg border bg-white cursor-move transition-all ${
-                  draggedIndex === index ? 'ring-2 ring-teal-500 border-teal-300' : 'border-gray-200'
-                }`}
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            {TONES.map((t) => (
+              <button
+                key={t.value}
+                onClick={() => setTone(t.value)}
+                className={cn(
+                  'relative p-4 rounded-xl border-2 text-left transition-all hover:shadow-md',
+                  tone === t.value
+                    ? 'border-primary bg-primary/5 shadow-sm'
+                    : 'border-border hover:border-muted-foreground'
+                )}
               >
-                <div className="flex items-center gap-2 text-gray-400">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-                  </svg>
-                  <span className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded text-sm font-medium text-gray-600">
-                    {index + 1}
-                  </span>
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-900">{section.name}</span>
-                    {section.required && (
-                      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-700">
-                        Required
-                      </span>
-                    )}
+                {tone === t.value && (
+                  <div className="absolute top-2 right-2">
+                    <CheckCircle2 className="w-4 h-4 text-primary" />
                   </div>
-                  <p className="text-sm text-gray-500 truncate">{section.instructions}</p>
+                )}
+                <div className={cn(
+                  'w-10 h-10 rounded-lg flex items-center justify-center mb-3',
+                  tone === t.value ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                )}>
+                  {t.icon}
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      setEditingSection(section);
-                      setShowSectionModal(true);
-                    }}
-                    className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => handleDeleteSection(section.id)}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+                <div className={cn('font-medium text-sm', tone === t.value ? 'text-primary' : 'text-foreground')}>
+                  {t.label}
                 </div>
-              </div>
+                <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                  {t.description}
+                </div>
+              </button>
             ))}
           </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="px-6 py-2 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50"
-        >
-          {isSaving ? 'Saving...' : 'Save Template'}
-        </button>
-      </div>
+      {/* Subject & Writing Style */}
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Type className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Subject Line & Style</CardTitle>
+              <CardDescription>Define the subject template and writing guidelines</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="subject">Subject Line Template</Label>
+            <Input
+              id="subject"
+              value={subjectTemplate}
+              onChange={(e) => setSubjectTemplate(e.target.value)}
+              placeholder="{{specific_observation}} at {{company_name}}"
+              className="font-mono text-sm"
+            />
+            <p className="text-xs text-muted-foreground">
+              Available variables: {"{{name}}"}, {"{{company_name}}"}, {"{{specific_observation}}"}
+            </p>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-2">
+            <Label htmlFor="writingStyle">Writing Style Instructions</Label>
+            <Textarea
+              id="writingStyle"
+              value={writingStyle}
+              onChange={(e) => setWritingStyle(e.target.value)}
+              placeholder="Knowledgeable and consultative. Show deep understanding of their business while being respectful of their time. Use specific data points from research."
+              rows={3}
+              className="resize-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="opening" className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs font-bold">1</span>
+                Opening Style
+              </Label>
+              <Textarea
+                id="opening"
+                value={openingStyle}
+                onChange={(e) => setOpeningStyle(e.target.value)}
+                placeholder="Lead with a specific, researched insight about their company or recent activity..."
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="closing" className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold">N</span>
+                Closing Style
+              </Label>
+              <Textarea
+                id="closing"
+                value={closingStyle}
+                onChange={(e) => setClosingStyle(e.target.value)}
+                placeholder="Offer value regardless of their interest - share a relevant insight or resource..."
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Length Constraints */}
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-amber-100 rounded-lg">
+              <AlignLeft className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Length Constraints</CardTitle>
+              <CardDescription>Control the email length</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <Label htmlFor="minPara">Minimum Paragraphs</Label>
+              <div className="flex items-center gap-4">
+                <Input
+                  id="minPara"
+                  type="number"
+                  value={minParagraphs}
+                  onChange={(e) => setMinParagraphs(parseInt(e.target.value))}
+                  min={1}
+                  max={10}
+                  className="w-24"
+                />
+                <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary/30 transition-all"
+                    style={{ width: `${(minParagraphs / 10) * 100}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <Label htmlFor="maxPara">Maximum Paragraphs</Label>
+              <div className="flex items-center gap-4">
+                <Input
+                  id="maxPara"
+                  type="number"
+                  value={maxParagraphs}
+                  onChange={(e) => setMaxParagraphs(parseInt(e.target.value))}
+                  min={1}
+                  max={20}
+                  className="w-24"
+                />
+                <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${(maxParagraphs / 20) * 100}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Email Sections */}
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <MessageSquare className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <CardTitle className="text-base">Email Sections</CardTitle>
+                <CardDescription>Define the structure of your emails. Drag to reorder.</CardDescription>
+              </div>
+            </div>
+            <Button
+              onClick={() => {
+                setEditingSection(null);
+                setShowSectionModal(true);
+              }}
+              size="sm"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add Section
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {sections.length === 0 ? (
+            <div className="text-center py-12 bg-muted/50 rounded-lg border-2 border-dashed">
+              <MessageSquare className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+              <p className="font-medium">No sections defined yet</p>
+              <p className="text-sm text-muted-foreground mt-1">Add sections to structure the email output</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-4"
+                onClick={() => {
+                  setEditingSection(null);
+                  setShowSectionModal(true);
+                }}
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add First Section
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {sections.map((section, index) => (
+                <div
+                  key={section.id}
+                  draggable
+                  onDragStart={() => handleDragStart(index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragEnd={handleDragEnd}
+                  className={cn(
+                    'group flex items-center gap-3 p-4 rounded-lg border bg-background cursor-move transition-all',
+                    draggedIndex === index
+                      ? 'ring-2 ring-primary border-primary shadow-lg scale-[1.02]'
+                      : 'border-border hover:border-muted-foreground hover:shadow-sm'
+                  )}
+                >
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <GripVertical className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity" />
+                    <div className={cn(
+                      'w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold',
+                      draggedIndex === index ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                    )}>
+                      {index + 1}
+                    </div>
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{section.name}</span>
+                      {section.required && (
+                        <Badge variant="destructive" className="text-xs">Required</Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground truncate mt-0.5">{section.instructions}</p>
+                  </div>
+
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setEditingSection(section);
+                        setShowSectionModal(true);
+                      }}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteSection(section.id)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Section Modal */}
-      {showSectionModal && (
-        <SectionModal
-          section={editingSection}
-          onClose={() => {
-            setShowSectionModal(false);
-            setEditingSection(null);
-          }}
-          onCreate={handleAddSection}
-          onUpdate={editingSection ? handleUpdateSection : undefined}
-        />
-      )}
+      <SectionModal
+        section={editingSection}
+        open={showSectionModal}
+        onClose={() => {
+          setShowSectionModal(false);
+          setEditingSection(null);
+        }}
+        onCreate={handleAddSection}
+        onUpdate={editingSection ? handleUpdateSection : undefined}
+      />
     </div>
   );
 }
 
 function SectionModal({
   section,
+  open,
   onClose,
   onCreate,
   onUpdate,
 }: {
   section: EmailSection | null;
+  open: boolean;
   onClose: () => void;
   onCreate: (data: Omit<EmailSection, 'id' | 'order'>) => void;
   onUpdate?: (data: EmailSection) => void;
@@ -395,6 +560,15 @@ function SectionModal({
   const [instructions, setInstructions] = useState(section?.instructions || '');
   const [example, setExample] = useState(section?.example || '');
   const [required, setRequired] = useState(section?.required || false);
+
+  useEffect(() => {
+    if (open) {
+      setName(section?.name || '');
+      setInstructions(section?.instructions || '');
+      setExample(section?.example || '');
+      setRequired(section?.required || false);
+    }
+  }, [open, section]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -406,81 +580,72 @@ function SectionModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4">
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">
-            {section ? 'Edit Section' : 'Add Section'}
-          </h3>
-        </div>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{section ? 'Edit Section' : 'Add New Section'}</DialogTitle>
+          <DialogDescription>
+            Define what this section should contain in the generated email
+          </DialogDescription>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Section Name</label>
-            <input
-              type="text"
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="sectionName">Section Name</Label>
+            <Input
+              id="sectionName"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-              placeholder="e.g., Personalized Hook"
+              placeholder="e.g., Personalized Hook, Value Proposition"
               required
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
-            <textarea
+          <div className="space-y-2">
+            <Label htmlFor="sectionInstructions">Instructions</Label>
+            <Textarea
+              id="sectionInstructions"
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              placeholder="Describe what the AI should write in this section..."
               rows={3}
-              placeholder="Instructions for what this section should contain"
               required
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Example (optional)</label>
-            <textarea
+          <div className="space-y-2">
+            <Label htmlFor="sectionExample">Example (optional)</Label>
+            <Textarea
+              id="sectionExample"
               value={example}
               onChange={(e) => setExample(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              placeholder="Provide an example of what this section might look like..."
               rows={2}
-              placeholder="An example of what this section might look like"
             />
           </div>
 
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="required"
+          <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+            <div>
+              <Label htmlFor="sectionRequired" className="font-medium">Required Section</Label>
+              <p className="text-xs text-muted-foreground">This section must be included in every email</p>
+            </div>
+            <Switch
+              id="sectionRequired"
               checked={required}
-              onChange={(e) => setRequired(e.target.checked)}
-              className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+              onCheckedChange={setRequired}
             />
-            <label htmlFor="required" className="text-sm font-medium text-gray-700">
-              Required section
-            </label>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors"
-            >
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={!name || !instructions}
-              className="px-4 py-2 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50"
-            >
+            </Button>
+            <Button type="submit" disabled={!name || !instructions}>
               {section ? 'Save Changes' : 'Add Section'}
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
