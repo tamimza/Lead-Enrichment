@@ -3,6 +3,7 @@ import {
   createEnrichmentConfig,
   listEnrichmentConfigs,
 } from '@/lib/enrichment-config-db';
+import { getActiveProject } from '@/lib/project-db';
 import {
   CreateEnrichmentConfigSchema,
   ConfigQuerySchema,
@@ -14,6 +15,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const tierParam = searchParams.get('tier');
+    const projectIdParam = searchParams.get('projectId');
 
     // Validate query params
     const queryResult = ConfigQuerySchema.safeParse({
@@ -27,11 +29,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const configs = await listEnrichmentConfigs(queryResult.data.tier as EnrichmentTierConfig | undefined);
+    // Get project ID - use param or fall back to active project
+    let projectId = projectIdParam;
+    if (!projectId) {
+      const activeProject = await getActiveProject();
+      projectId = activeProject?.id || undefined;
+    }
+
+    const configs = await listEnrichmentConfigs(
+      queryResult.data.tier as EnrichmentTierConfig | undefined,
+      undefined,
+      projectId || undefined
+    );
 
     return NextResponse.json({
       configs,
       total: configs.length,
+      projectId,
     });
   } catch (error) {
     console.error('GET /api/admin/enrichment-config error:', error);
@@ -56,7 +70,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const config = await createEnrichmentConfig(validationResult.data);
+    // Get project ID from body or active project
+    let projectId = body.projectId;
+    if (!projectId) {
+      const activeProject = await getActiveProject();
+      projectId = activeProject?.id;
+    }
+
+    const config = await createEnrichmentConfig({
+      ...validationResult.data,
+      projectId,
+    });
 
     return NextResponse.json(config, { status: 201 });
   } catch (error) {

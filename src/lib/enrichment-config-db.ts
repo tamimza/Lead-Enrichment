@@ -164,14 +164,14 @@ function rowToTemplateLibraryItem(row: TemplateLibraryRow): TemplateLibraryItem 
 // =============================================================================
 
 export async function createEnrichmentConfig(
-  data: CreateEnrichmentConfigRequest,
+  data: CreateEnrichmentConfigRequest & { projectId?: string },
   orgId: string = DEFAULT_ORG_ID
 ): Promise<EnrichmentConfig> {
   const result = await pool.query<EnrichmentConfigRow>(
     `INSERT INTO enrichment_configs (
       org_id, tier, name, description, max_turns, max_tool_calls, max_budget_usd,
-      allowed_tools, email_tone, email_min_words, email_max_words
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      allowed_tools, email_tone, email_min_words, email_max_words, project_id
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
     RETURNING *`,
     [
       orgId,
@@ -185,6 +185,7 @@ export async function createEnrichmentConfig(
       data.emailTone ?? 'professional',
       data.emailMinWords ?? 100,
       data.emailMaxWords ?? 200,
+      data.projectId || null,
     ]
   );
   return rowToConfig(result.rows[0]);
@@ -211,13 +212,21 @@ export async function getActiveConfigForTier(
 
 export async function listEnrichmentConfigs(
   tier?: EnrichmentTierConfig,
-  orgId: string = DEFAULT_ORG_ID
+  orgId: string = DEFAULT_ORG_ID,
+  projectId?: string
 ): Promise<EnrichmentConfig[]> {
   let query = 'SELECT * FROM enrichment_configs WHERE org_id = $1';
   const params: (string | undefined)[] = [orgId];
+  let paramIndex = 2;
+
+  if (projectId) {
+    query += ` AND project_id = $${paramIndex}`;
+    params.push(projectId);
+    paramIndex++;
+  }
 
   if (tier) {
-    query += ' AND tier = $2';
+    query += ` AND tier = $${paramIndex}`;
     params.push(tier);
   }
 
@@ -1104,4 +1113,356 @@ export async function getActiveFullConfigForTier(
   if (!config) return null;
 
   return getFullEnrichmentConfig(config.id);
+}
+
+// =============================================================================
+// Bulk Config Creation (for AI-generated configs)
+// =============================================================================
+
+interface GeneratedTierConfigInput {
+  tier: 'standard' | 'medium' | 'premium';
+  name: string;
+  description?: string;
+  maxTurns: number;
+  maxBudgetUsd: number;
+  allowedTools: string[];
+  emailTone: string;
+  emailMinWords: number;
+  emailMaxWords: number;
+  playbook: Array<{
+    name: string;
+    description?: string;
+    searchType: string;
+    queryTemplate: string;
+    requiredVariables?: string[];
+    skipIfFound?: string[];
+    requiredTier?: string;
+  }>;
+  priorities: Array<{
+    name: string;
+    description?: string;
+    category: string;
+    weight: number;
+    isRequired?: boolean;
+    extractionHint?: string;
+  }>;
+  thinkingRules: Array<{
+    name: string;
+    description?: string;
+    conditionType: string;
+    conditionField?: string;
+    conditionValue?: string;
+    conditionOperator?: string;
+    actionType: string;
+    actionValue: Record<string, unknown>;
+  }>;
+  emailTemplate: {
+    name: string;
+    subjectTemplate?: string;
+    tone: string;
+    writingStyle?: string;
+    openingStyle?: string;
+    closingStyle?: string;
+    signatureTemplate?: string;
+    minParagraphs?: number;
+    maxParagraphs?: number;
+    sections: Array<{
+      id: string;
+      name: string;
+      order: number;
+      required: boolean;
+      instructions: string;
+      example?: string;
+    }>;
+  };
+  blacklist: Array<{
+    itemType: string;
+    value: string;
+    reason?: string;
+    replacement?: string;
+  }>;
+}
+
+/**
+ * Create a full enrichment config with all sub-entities from AI-generated data.
+ * This is used when creating a project with AI-assisted setup.
+ */
+export async function createFullEnrichmentConfig(
+  data: GeneratedTierConfigInput,
+  projectId: string,
+  orgId: string = DEFAULT_ORG_ID
+): Promise<EnrichmentConfig> {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // 1. Create the main config
+    // Handle data that may come with camelCase or snake_case or different names
+    const configData = data as unknown as Record<string, unknown>;
+    const tier = configData.tier || 'standard';
+    const name = configData.name || `${tier} config`;
+    const description = configData.description || null;
+    const maxTurns = configData.maxTurns ?? configData.max_turns ?? 10;
+    const maxToolCalls = configData.maxToolCalls ?? configData.max_tool_calls ?? 5;
+    const maxBudgetUsd = configData.maxBudgetUsd ?? configData.max_budget_usd ?? 0.5;
+    const allowedTools = configData.allowedTools ?? configData.allowed_tools ?? ['WebSearch', 'WebFetch'];
+    const emailTone = configData.emailTone ?? configData.email_tone ?? 'professional';
+    const emailMinWords = configData.emailMinWords ?? configData.email_min_words ?? 100;
+    const emailMaxWords = configData.emailMaxWords ?? configData.email_max_words ?? 200;
+
+    const configResult = await client.query<EnrichmentConfigRow>(
+      `INSERT INTO enrichment_configs (
+        org_id, tier, name, description, max_turns, max_tool_calls, max_budget_usd,
+        allowed_tools, email_tone, email_min_words, email_max_words, project_id, is_active
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true)
+      RETURNING *`,
+      [
+        orgId,
+        tier,
+        name,
+        description,
+        maxTurns,
+        maxToolCalls,
+        maxBudgetUsd,
+        allowedTools,
+        emailTone,
+        emailMinWords,
+        emailMaxWords,
+        projectId,
+      ]
+    );
+    const config = rowToConfig(configResult.rows[0]);
+
+    // 2. Create playbook steps
+    if (data.playbook && data.playbook.length > 0) {
+      console.log('[createFullEnrichmentConfig] Playbook first item sample:', JSON.stringify(data.playbook[0], null, 2));
+      for (let i = 0; i < data.playbook.length; i++) {
+        const rawStep = data.playbook[i];
+
+        // Handle case where AI returns playbook items as strings instead of objects
+        let stepName: string;
+        let searchType: string;
+        let queryTemplate: string;
+        let description: string | null = null;
+        let requiredVariables: string[] = [];
+        let skipIfFound: string[] | null = null;
+        let requiredTier: string | null = null;
+
+        if (typeof rawStep === 'string') {
+          // AI returned a simple string - use it as both name and query template
+          stepName = `Step ${i + 1}: Web Search`;
+          queryTemplate = rawStep;
+          searchType = 'web_search';
+          description = rawStep;
+        } else {
+          const step = rawStep as Record<string, unknown>;
+          stepName = (step.name || step.title || step.stepName || `Step ${i + 1}`) as string;
+          searchType = (step.searchType || step.search_type || step.type || 'web_search') as string;
+          queryTemplate = (step.queryTemplate || step.query_template || step.query || '') as string;
+          description = (step.description || step.desc || null) as string | null;
+          requiredVariables = (step.requiredVariables || step.required_variables || step.variables || []) as string[];
+          skipIfFound = (step.skipIfFound || step.skip_if_found || null) as string[] | null;
+          requiredTier = (step.requiredTier || step.required_tier || null) as string | null;
+        }
+
+        await client.query(
+          `INSERT INTO search_playbook_steps (
+            config_id, step_order, name, description, search_type,
+            query_template, required_variables, skip_if_found, required_tier
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [
+            config.id,
+            i + 1,
+            stepName,
+            description,
+            searchType,
+            queryTemplate,
+            Array.isArray(requiredVariables) ? requiredVariables : [],
+            Array.isArray(skipIfFound) ? skipIfFound : null,
+            requiredTier,
+          ]
+        );
+      }
+    }
+
+    // 3. Create priorities
+    if (data.priorities && data.priorities.length > 0) {
+      console.log('[createFullEnrichmentConfig] Priority first item sample:', JSON.stringify(data.priorities[0], null, 2));
+      for (let i = 0; i < data.priorities.length; i++) {
+        const priority = data.priorities[i] as Record<string, unknown>;
+        // Handle potential field name variations from AI (including 'field' instead of 'name')
+        const priorityName = (priority.name || priority.field || priority.title || priority.priorityName || `Priority ${i + 1}`) as string;
+        const category = (priority.category || priority.type || 'company') as string;
+
+        // Handle weight - AI might return decimal (0.0-1.0) or integer (1-10)
+        let rawWeight = priority.weight ?? priority.importance ?? 5;
+        let weight: number;
+        if (typeof rawWeight === 'number') {
+          if (rawWeight <= 1) {
+            // Convert 0.0-1.0 scale to 1-10 scale
+            weight = Math.round(rawWeight * 10) || 1;
+          } else {
+            weight = Math.round(rawWeight);
+          }
+        } else {
+          weight = 5; // default
+        }
+        // Ensure weight is within valid range (1-10)
+        weight = Math.max(1, Math.min(10, weight));
+
+        const isRequired = (priority.isRequired ?? priority.is_required ?? priority.required ?? false) as boolean;
+        const extractionHint = (priority.extractionHint || priority.extraction_hint || priority.hint || priority.description || null) as string | null;
+
+        await client.query(
+          `INSERT INTO information_priorities (
+            config_id, priority_order, name, description, category,
+            weight, is_required, extraction_hint
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [
+            config.id,
+            i + 1,
+            priorityName,
+            (priority.description || null) as string | null,
+            category,
+            weight,
+            isRequired,
+            extractionHint,
+          ]
+        );
+      }
+    }
+
+    // 4. Create thinking rules
+    if (data.thinkingRules && data.thinkingRules.length > 0) {
+      console.log('[createFullEnrichmentConfig] Rule first item sample:', JSON.stringify(data.thinkingRules[0], null, 2));
+      for (let i = 0; i < data.thinkingRules.length; i++) {
+        const rawRule = data.thinkingRules[i];
+
+        // Handle case where AI returns rules as strings
+        let ruleName: string;
+        let description: string | null = null;
+        let conditionType: string;
+        let conditionField: string | null = null;
+        let conditionValue: string | null = null;
+        let conditionOperator: string;
+        let actionType: string;
+        let actionValue: Record<string, unknown>;
+
+        if (typeof rawRule === 'string') {
+          ruleName = `Rule ${i + 1}`;
+          description = rawRule;
+          conditionType = 'custom';
+          conditionOperator = 'equals';
+          actionType = 'add_insight';
+          actionValue = { insight: rawRule };
+        } else {
+          const rule = rawRule as Record<string, unknown>;
+          ruleName = (rule.name || rule.title || rule.ruleName || `Rule ${i + 1}`) as string;
+          description = (rule.description || null) as string | null;
+          conditionType = (rule.conditionType || rule.condition_type || rule.type || rule.condition || 'data_found') as string;
+          conditionField = (rule.conditionField || rule.condition_field || rule.field || null) as string | null;
+          conditionValue = (rule.conditionValue || rule.condition_value || rule.value || null) as string | null;
+          conditionOperator = (rule.conditionOperator || rule.condition_operator || rule.operator || 'equals') as string;
+          actionType = (rule.actionType || rule.action_type || rule.action || 'add_insight') as string;
+          actionValue = (rule.actionValue || rule.action_value || rule.result || rule.outcome || {}) as Record<string, unknown>;
+        }
+
+        await client.query(
+          `INSERT INTO thinking_rules (
+            config_id, rule_order, name, description, condition_type,
+            condition_field, condition_value, condition_operator,
+            action_type, action_value
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          [
+            config.id,
+            i + 1,
+            ruleName,
+            description,
+            conditionType,
+            conditionField,
+            conditionValue,
+            conditionOperator,
+            actionType,
+            JSON.stringify(actionValue),
+          ]
+        );
+      }
+    }
+
+    // 5. Create email template
+    if (data.emailTemplate) {
+      const et = data.emailTemplate as Record<string, unknown>;
+      console.log('[createFullEnrichmentConfig] Email template sample:', JSON.stringify(et, null, 2).substring(0, 500));
+      // Handle potential field name variations from AI
+      const templateName = et.name || et.templateName || 'Default Template';
+      const subjectTemplate = et.subjectTemplate || et.subject_template || et.subject || null;
+      const tone = et.tone || 'professional';
+      const writingStyle = et.writingStyle || et.writing_style || et.style || null;
+      const sections = et.sections || [];
+      const openingStyle = et.openingStyle || et.opening_style || et.opening || null;
+      const closingStyle = et.closingStyle || et.closing_style || et.closing || null;
+      const signatureTemplate = et.signatureTemplate || et.signature_template || et.signature || null;
+      const minParagraphs = et.minParagraphs ?? et.min_paragraphs ?? 3;
+      const maxParagraphs = et.maxParagraphs ?? et.max_paragraphs ?? 5;
+
+      await client.query(
+        `INSERT INTO email_templates (
+          config_id, name, subject_template, tone, writing_style,
+          sections, opening_style, closing_style, signature_template,
+          min_paragraphs, max_paragraphs, is_active
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, true)`,
+        [
+          config.id,
+          templateName,
+          subjectTemplate,
+          tone,
+          writingStyle,
+          JSON.stringify(sections),
+          openingStyle,
+          closingStyle,
+          signatureTemplate,
+          minParagraphs,
+          maxParagraphs,
+        ]
+      );
+    }
+
+    // 6. Create blacklist items
+    if (data.blacklist && data.blacklist.length > 0) {
+      console.log('[createFullEnrichmentConfig] Blacklist first item sample:', JSON.stringify(data.blacklist[0], null, 2));
+      for (const item of data.blacklist) {
+        const bl = item as Record<string, unknown>;
+        // Handle potential field name variations from AI
+        const itemType = bl.itemType || bl.item_type || bl.type || 'word';
+        const value = bl.value || bl.word || bl.phrase || bl.text || '';
+        const reason = bl.reason || null;
+        const replacement = bl.replacement || bl.alternative || null;
+
+        if (value) { // Only insert if we have a value
+          await client.query(
+            `INSERT INTO blacklist_items (config_id, item_type, value, reason, replacement)
+            VALUES ($1, $2, $3, $4, $5)`,
+            [
+              config.id,
+              itemType,
+              value,
+              reason,
+              replacement,
+            ]
+          );
+        }
+      }
+    }
+
+    await client.query('COMMIT');
+    console.log(`[createFullEnrichmentConfig] Created ${data.tier} config for project ${projectId}`);
+    return config;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('[createFullEnrichmentConfig] Error:', error);
+    throw error;
+  } finally {
+    client.release();
+  }
 }

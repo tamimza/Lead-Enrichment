@@ -1,0 +1,25 @@
+# Railway Configuration for Lead Enrichment Worker
+# This file configures how Railway deploys the background worker
+
+[build]
+# Use Dockerfile for building
+dockerfilePath = "Dockerfile.worker"
+
+[deploy]
+# Number of instances
+numReplicas = 1
+
+# Health check (optional - worker doesn't expose HTTP)
+# healthcheckPath = "/health"
+# healthcheckTimeout = 100
+
+# Restart policy
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+# Resource limits (adjust based on your plan)
+# Railway will auto-scale based on usage
+
+[service]
+# Service name
+name = "lead-enrichment-worker"

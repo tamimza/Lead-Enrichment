@@ -1,5 +1,8 @@
 // Project types for business context
 
+export type SetupMethod = 'ai_assisted' | 'template' | 'manual';
+export type AIGenerationStatus = 'pending' | 'generating' | 'completed' | 'failed';
+
 export interface Project {
   id: string;
   name: string;
@@ -31,6 +34,17 @@ export interface Project {
   scrapedData: ScrapedWebsiteData | null;
   scrapedAt: Date | null;
 
+  // Setup method
+  setupMethod: SetupMethod;
+  sourceTemplateId: string | null;
+  aiGenerationStatus: AIGenerationStatus;
+  aiGenerationError: string | null;
+
+  // Usage limits
+  maxLeadsPerMonth: number;
+  leadsUsedThisMonth: number;
+  usageResetDate: Date;
+
   // Status
   isActive: boolean;
 
@@ -41,10 +55,13 @@ export interface Project {
 export interface ScrapedWebsiteData {
   title: string | null;
   description: string | null;
+  metaDescription: string | null;
   ogTitle: string | null;
   ogDescription: string | null;
   keywords: string[];
   headings: string[];
+  paragraphs: string[];
+  links: { text: string; href: string }[];
   aboutText: string | null;
   productMentions: string[];
   socialLinks: {
@@ -60,6 +77,7 @@ export interface ScrapedWebsiteData {
   };
   techStack: string[];
   rawText: string;
+  suggestedIndustry?: string;
 }
 
 export interface CreateProjectRequest {
@@ -77,6 +95,8 @@ export interface CreateProjectRequest {
   senderTitle?: string;
   senderEmail?: string;
   calendarLink?: string;
+  setupMethod?: SetupMethod;
+  sourceTemplateId?: string;
 }
 
 export interface UpdateProjectRequest {

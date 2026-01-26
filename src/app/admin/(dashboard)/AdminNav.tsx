@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { Settings, LogOut, Zap, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import ProjectSelector from '@/components/admin/ProjectSelector';
 
 export default function AdminNav() {
   const router = useRouter();
@@ -71,7 +72,8 @@ export default function AdminNav() {
               </Link>
             </div>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center gap-4">
+            <ProjectSelector />
             <Button
               variant="ghost"
               onClick={handleLogout}

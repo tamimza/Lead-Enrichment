@@ -269,13 +269,16 @@ Use this tool when you have a LinkedIn URL and need detailed professional inform
     try {
       console.log(`[LinkedIn Scraper] Launching Puppeteer browser...`);
       // Launch headless browser
+      // In Docker/production, use the installed Chromium via PUPPETEER_EXECUTABLE_PATH
       browser = await puppeteer.launch({
         headless: true,
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
           '--disable-gpu',
+          '--single-process', // Required for some Docker environments
         ],
       });
 

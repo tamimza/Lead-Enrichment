@@ -8,11 +8,17 @@ import type { Lead, LeadRow, LeadFormData, LeadStatus, EnrichmentData, Enrichmen
 const DATA_RETENTION_DAYS = 90;
 
 // Create connection pool singleton
+// Enable SSL for production databases (Neon, Supabase, etc.)
+const isProduction = process.env.NODE_ENV === 'production';
+const connectionString = process.env.DATABASE_URL;
+
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString,
   max: 20, // Maximum connections in pool
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
+  // Enable SSL for production (required by Neon, Supabase, etc.)
+  ssl: isProduction ? { rejectUnauthorized: false } : false,
 });
 
 // Test connection on startup
@@ -47,7 +53,7 @@ function rowToLead(row: LeadRow): Lead {
 /**
  * Create a new lead in the database
  */
-export async function createLead(data: LeadFormData): Promise<Lead> {
+export async function createLead(data: LeadFormData & { projectId?: string }): Promise<Lead> {
   // Calculate expiration date based on retention policy
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + DATA_RETENTION_DAYS);
@@ -55,9 +61,9 @@ export async function createLead(data: LeadFormData): Promise<Lead> {
   const query = `
     INSERT INTO leads (
       full_name, company_name, job_title, email, linkedin_url, company_website,
-      enrichment_tier, expires_at
+      enrichment_tier, expires_at, project_id
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     RETURNING *
   `;
 
@@ -70,6 +76,7 @@ export async function createLead(data: LeadFormData): Promise<Lead> {
     data.companyWebsite || null,
     data.enrichmentTier || 'standard',
     expiresAt,
+    data.projectId || null,
   ];
 
   try {
@@ -184,12 +191,13 @@ export async function updateStatus(id: string, status: LeadStatus): Promise<void
 }
 
 /**
- * List leads with pagination and optional status filter
+ * List leads with pagination and optional status/project filter
  */
 export async function listLeads(options: {
   page?: number;
   limit?: number;
   status?: LeadStatus;
+  projectId?: string;
 }): Promise<{ leads: Lead[]; total: number }> {
   const page = options.page || 1;
   const limit = options.limit || 25;
@@ -198,15 +206,31 @@ export async function listLeads(options: {
   let query = 'SELECT * FROM leads';
   let countQuery = 'SELECT COUNT(*) FROM leads';
   const values: any[] = [];
+  const countValues: any[] = [];
   let paramIndex = 1;
+  const whereClauses: string[] = [];
+
+  // Add project filter if provided
+  if (options.projectId) {
+    whereClauses.push(`project_id = $${paramIndex}`);
+    values.push(options.projectId);
+    countValues.push(options.projectId);
+    paramIndex++;
+  }
 
   // Add status filter if provided
   if (options.status) {
-    const whereClause = ` WHERE status = $${paramIndex}`;
+    whereClauses.push(`status = $${paramIndex}`);
+    values.push(options.status);
+    countValues.push(options.status);
+    paramIndex++;
+  }
+
+  // Apply where clauses
+  if (whereClauses.length > 0) {
+    const whereClause = ` WHERE ${whereClauses.join(' AND ')}`;
     query += whereClause;
     countQuery += whereClause;
-    values.push(options.status);
-    paramIndex++;
   }
 
   // Add ordering and pagination
@@ -216,7 +240,7 @@ export async function listLeads(options: {
   // Execute queries in parallel
   const [leadsResult, countResult] = await Promise.all([
     pool.query<LeadRow>(query, values),
-    pool.query<{ count: string }>(countQuery, options.status ? [options.status] : []),
+    pool.query<{ count: string }>(countQuery, countValues),
   ]);
 
   return {

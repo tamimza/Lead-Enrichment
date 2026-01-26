@@ -31,6 +31,13 @@ interface ProjectRow {
   calendar_link: string | null;
   scraped_data: ScrapedWebsiteData | null;
   scraped_at: Date | null;
+  setup_method: 'ai_assisted' | 'template' | 'manual';
+  source_template_id: string | null;
+  ai_generation_status: 'pending' | 'generating' | 'completed' | 'failed';
+  ai_generation_error: string | null;
+  max_leads_per_month: number;
+  leads_used_this_month: number;
+  usage_reset_date: Date;
   is_active: boolean;
   created_at: Date;
   updated_at: Date;
@@ -59,6 +66,13 @@ function rowToProject(row: ProjectRow): Project {
     calendarLink: row.calendar_link,
     scrapedData: row.scraped_data,
     scrapedAt: row.scraped_at,
+    setupMethod: row.setup_method || 'manual',
+    sourceTemplateId: row.source_template_id,
+    aiGenerationStatus: row.ai_generation_status || 'pending',
+    aiGenerationError: row.ai_generation_error,
+    maxLeadsPerMonth: row.max_leads_per_month || 100,
+    leadsUsedThisMonth: row.leads_used_this_month || 0,
+    usageResetDate: row.usage_reset_date || new Date(),
     isActive: row.is_active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -75,8 +89,9 @@ export async function createProject(data: CreateProjectRequest): Promise<Project
       name, company_name, company_website, company_description,
       products, value_propositions, differentiators,
       target_customer_profile, industry_focus, competitors,
-      sender_name, sender_title, sender_email, calendar_link
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      sender_name, sender_title, sender_email, calendar_link,
+      setup_method, source_template_id
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
     RETURNING *`,
     [
       data.name,
@@ -93,6 +108,8 @@ export async function createProject(data: CreateProjectRequest): Promise<Project
       data.senderTitle || null,
       data.senderEmail || null,
       data.calendarLink || null,
+      data.setupMethod || 'manual',
+      data.sourceTemplateId || null,
     ]
   );
 
@@ -237,18 +254,74 @@ export async function setActiveProject(id: string): Promise<Project | null> {
 }
 
 export async function deleteProject(id: string): Promise<boolean> {
-  // First unlink any enrichment configs
-  await pool.query(
-    'UPDATE enrichment_configs SET project_id = NULL WHERE project_id = $1',
-    [id]
-  );
+  const client = await pool.connect();
 
-  const result = await pool.query(
-    'DELETE FROM projects WHERE id = $1 RETURNING id',
-    [id]
-  );
+  try {
+    await client.query('BEGIN');
 
-  return result.rowCount !== null && result.rowCount > 0;
+    // Get all config IDs for this project
+    const configsResult = await client.query(
+      'SELECT id FROM enrichment_configs WHERE project_id = $1',
+      [id]
+    );
+    const configIds = configsResult.rows.map((r) => r.id);
+
+    // Delete all sub-entities for each config
+    if (configIds.length > 0) {
+      // Delete playbook steps
+      await client.query(
+        'DELETE FROM search_playbook_steps WHERE config_id = ANY($1)',
+        [configIds]
+      );
+
+      // Delete information priorities
+      await client.query(
+        'DELETE FROM information_priorities WHERE config_id = ANY($1)',
+        [configIds]
+      );
+
+      // Delete thinking rules
+      await client.query(
+        'DELETE FROM thinking_rules WHERE config_id = ANY($1)',
+        [configIds]
+      );
+
+      // Delete email templates
+      await client.query(
+        'DELETE FROM email_templates WHERE config_id = ANY($1)',
+        [configIds]
+      );
+
+      // Delete blacklist items
+      await client.query(
+        'DELETE FROM blacklist_items WHERE config_id = ANY($1)',
+        [configIds]
+      );
+
+      // Delete the configs themselves
+      await client.query(
+        'DELETE FROM enrichment_configs WHERE project_id = $1',
+        [id]
+      );
+    }
+
+    // Delete the project
+    const result = await client.query(
+      'DELETE FROM projects WHERE id = $1 RETURNING id',
+      [id]
+    );
+
+    await client.query('COMMIT');
+
+    console.log(`[deleteProject] Deleted project ${id} with ${configIds.length} configs`);
+    return result.rowCount !== null && result.rowCount > 0;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('[deleteProject] Error:', error);
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 // =============================================================================
@@ -318,4 +391,88 @@ export async function getProjectForConfig(configId: string): Promise<Project | n
   );
 
   return result.rows.length > 0 ? rowToProject(result.rows[0]) : null;
+}
+
+// =============================================================================
+// AI Generation Status
+// =============================================================================
+
+export async function updateAIGenerationStatus(
+  projectId: string,
+  status: 'pending' | 'generating' | 'completed' | 'failed',
+  error?: string
+): Promise<Project | null> {
+  const result = await pool.query<ProjectRow>(
+    `UPDATE projects
+     SET ai_generation_status = $1, ai_generation_error = $2, updated_at = NOW()
+     WHERE id = $3 RETURNING *`,
+    [status, error || null, projectId]
+  );
+
+  return result.rows.length > 0 ? rowToProject(result.rows[0]) : null;
+}
+
+// =============================================================================
+// Project Configs - Get configs for a specific project
+// =============================================================================
+
+export async function getProjectConfigs(projectId: string): Promise<{
+  standard: string | null;
+  medium: string | null;
+  premium: string | null;
+}> {
+  const result = await pool.query(
+    `SELECT id, tier FROM enrichment_configs
+     WHERE project_id = $1 AND is_active = true`,
+    [projectId]
+  );
+
+  const configs: { standard: string | null; medium: string | null; premium: string | null } = {
+    standard: null,
+    medium: null,
+    premium: null,
+  };
+
+  for (const row of result.rows) {
+    if (row.tier === 'standard') configs.standard = row.id;
+    if (row.tier === 'medium') configs.medium = row.id;
+    if (row.tier === 'premium') configs.premium = row.id;
+  }
+
+  return configs;
+}
+
+// =============================================================================
+// Usage Tracking
+// =============================================================================
+
+export async function incrementLeadUsage(projectId: string): Promise<void> {
+  await pool.query(
+    `UPDATE projects
+     SET leads_used_this_month = leads_used_this_month + 1, updated_at = NOW()
+     WHERE id = $1`,
+    [projectId]
+  );
+}
+
+export async function checkLeadLimit(projectId: string): Promise<{
+  allowed: boolean;
+  used: number;
+  limit: number;
+}> {
+  const result = await pool.query(
+    `SELECT leads_used_this_month, max_leads_per_month FROM projects WHERE id = $1`,
+    [projectId]
+  );
+
+  if (result.rows.length === 0) {
+    return { allowed: false, used: 0, limit: 0 };
+  }
+
+  const { leads_used_this_month, max_leads_per_month } = result.rows[0];
+  return {
+    allowed: leads_used_this_month < max_leads_per_month,
+    used: leads_used_this_month,
+    limit: max_leads_per_month,
+  };
 }

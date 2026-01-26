@@ -66,6 +66,25 @@ export async function analyzeWebsite(url: string): Promise<ScrapedWebsiteData> {
     }
   });
 
+  // Extract paragraphs (for AI context)
+  const paragraphs: string[] = [];
+  $('p').each((_, el) => {
+    const text = $(el).text().trim();
+    if (text && text.length > 50 && text.length < 500) {
+      paragraphs.push(text);
+    }
+  });
+
+  // Extract links (for navigation context)
+  const links: { text: string; href: string }[] = [];
+  $('a').each((_, el) => {
+    const text = $(el).text().trim();
+    const href = $(el).attr('href') || '';
+    if (text && text.length < 50 && href.startsWith('/')) {
+      links.push({ text, href });
+    }
+  });
+
   // Extract about text (look for common about sections)
   let aboutText: string | null = null;
   const aboutSelectors = [
@@ -164,21 +183,37 @@ export async function analyzeWebsite(url: string): Promise<ScrapedWebsiteData> {
     .trim()
     .slice(0, 5000);
 
-  console.log(`[WebsiteAnalyzer] Extracted: title="${title}", headings=${headings.length}, products=${productMentions.length}`);
+  // Detect industry from content
+  const fullText = [title, description, aboutText, ...keywords, ...headings].join(' ').toLowerCase();
+  let suggestedIndustry: string | undefined;
+
+  for (const [industry, industryKeywords] of Object.entries(INDUSTRY_KEYWORDS)) {
+    const matchCount = industryKeywords.filter(k => fullText.includes(k.toLowerCase())).length;
+    if (matchCount >= 2) {
+      suggestedIndustry = industry;
+      break;
+    }
+  }
+
+  console.log(`[WebsiteAnalyzer] Extracted: title="${title}", headings=${headings.length}, products=${productMentions.length}, industry=${suggestedIndustry}`);
 
   return {
     title,
     description,
+    metaDescription: description, // Alias for AI generator compatibility
     ogTitle,
     ogDescription,
     keywords,
     headings: headings.slice(0, 20),
+    paragraphs: paragraphs.slice(0, 10),
+    links: links.slice(0, 20),
     aboutText,
     productMentions: [...new Set(productMentions)].slice(0, 15),
     socialLinks,
     contactInfo,
     techStack: [...new Set(techStack)],
     rawText,
+    suggestedIndustry,
   };
 }
 

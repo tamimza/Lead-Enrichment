@@ -20,6 +20,7 @@ const navigation = [
     title: 'Configuration',
     items: [
       { name: 'Configuration System', href: '#configuration' },
+      { name: 'Business Context', href: '#business-context' },
       { name: 'Research Playbook', href: '#playbook' },
       { name: 'Information Priorities', href: '#priorities' },
       { name: 'Thinking Rules', href: '#rules' },
@@ -131,11 +132,16 @@ export default function DocsPage() {
                 You control exactly what the AI searches for, how it interprets data, and how it drafts emails.
               </p>
 
-              <div className="grid md:grid-cols-3 gap-4 mb-8">
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <div className="bg-teal-50 border border-teal-100 rounded-xl p-5">
+                  <div className="text-2xl mb-2">🏢</div>
+                  <p className="text-teal-800 font-semibold mb-1">Business Context</p>
+                  <p className="text-sm text-teal-700">Your company info, products, and value props power personalized outreach</p>
+                </div>
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-5">
                   <div className="text-2xl mb-2">🎯</div>
-                  <p className="text-teal-800 font-semibold mb-1">Configurable Playbooks</p>
-                  <p className="text-sm text-teal-700">Define exact search steps, tools, and queries the AI should execute</p>
+                  <p className="text-blue-800 font-semibold mb-1">Configurable Playbooks</p>
+                  <p className="text-sm text-blue-700">Define exact search steps, tools, and queries the AI should execute</p>
                 </div>
                 <div className="bg-amber-50 border border-amber-100 rounded-xl p-5">
                   <div className="text-2xl mb-2">🧠</div>
@@ -173,15 +179,15 @@ export default function DocsPage() {
                 <div className="flex gap-4 items-start">
                   <div className="w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold">2</div>
                   <div>
-                    <h4 className="font-semibold text-gray-900">Config Loaded from DB</h4>
-                    <p className="text-gray-600 text-sm">System loads active enrichment config: playbook, priorities, rules, email template, blacklist</p>
+                    <h4 className="font-semibold text-gray-900">Business Context + Config Loaded</h4>
+                    <p className="text-gray-600 text-sm">System loads project&apos;s business context (company info, products, value props) and enrichment config (playbook, priorities, rules, email template)</p>
                   </div>
                 </div>
                 <div className="flex gap-4 items-start">
                   <div className="w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold">3</div>
                   <div>
                     <h4 className="font-semibold text-gray-900">Dynamic Prompt Built</h4>
-                    <p className="text-gray-600 text-sm">All config elements are injected into the system prompt - AI knows exactly what to do</p>
+                    <p className="text-gray-600 text-sm">Business context and config elements are injected into the system prompt - AI knows your company and what to do</p>
                   </div>
                 </div>
                 <div className="flex gap-4 items-start">
@@ -282,6 +288,7 @@ export default function DocsPage() {
                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 inline-block">
                       <div className="text-xs font-semibold text-amber-700 uppercase mb-2 text-center">Dynamic Prompt Injection</div>
                       <div className="flex gap-2 flex-wrap justify-center">
+                        <div className="bg-white border border-teal-400 rounded px-2 py-1 text-xs font-medium text-teal-700">Business Context</div>
                         <div className="bg-white border border-amber-300 rounded px-2 py-1 text-xs">Playbook</div>
                         <div className="bg-white border border-amber-300 rounded px-2 py-1 text-xs">Priorities</div>
                         <div className="bg-white border border-amber-300 rounded px-2 py-1 text-xs">Rules</div>
@@ -298,8 +305,52 @@ export default function DocsPage() {
               {/* Configuration System */}
               <h2 className="text-2xl font-bold text-gray-900 mb-4" id="configuration">Configuration System</h2>
               <p className="text-gray-600 mb-6">
-                The heart of Guided AI. Each enrichment tier has its own configuration that controls every aspect of the research and email generation process.
+                The heart of Guided AI. Each project has its own business context and enrichment configurations that control every aspect of the research and email generation process.
               </p>
+
+              {/* Business Context */}
+              <div className="border-2 border-teal-200 bg-teal-50/30 rounded-xl p-6 mb-4" id="business-context">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="bg-teal-100 text-teal-700 px-3 py-1 rounded-md text-sm font-semibold">Business Context</span>
+                  <span className="text-xs text-teal-600">Foundation for personalization</span>
+                </div>
+                <p className="text-gray-600 mb-4">
+                  Your company&apos;s identity that the AI uses to personalize research and emails. This context is injected into every enrichment, ensuring the AI understands who you are and what you offer.
+                </p>
+                <div className="grid md:grid-cols-2 gap-4 mb-4">
+                  <div className="bg-white border border-teal-200 rounded-lg p-4">
+                    <h5 className="font-semibold text-teal-800 text-sm mb-2">Company Information</h5>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• <strong>Company Name</strong> - Your business name</li>
+                      <li>• <strong>Description</strong> - What your company does</li>
+                      <li>• <strong>Products/Services</strong> - What you offer</li>
+                      <li>• <strong>Industry Focus</strong> - Sectors you serve</li>
+                    </ul>
+                  </div>
+                  <div className="bg-white border border-teal-200 rounded-lg p-4">
+                    <h5 className="font-semibold text-teal-800 text-sm mb-2">Value Messaging</h5>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• <strong>Value Propositions</strong> - Key benefits you provide</li>
+                      <li>• <strong>Differentiators</strong> - What makes you unique</li>
+                      <li>• <strong>Target Customer</strong> - Ideal customer profile</li>
+                      <li>• <strong>Competitors</strong> - Who you compete with</li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="bg-white border border-teal-200 rounded-lg p-4">
+                  <h5 className="font-semibold text-teal-800 text-sm mb-2">Sender Details</h5>
+                  <p className="text-sm text-gray-600 mb-2">Used for email signatures and personalization:</p>
+                  <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                    <span>• Sender Name</span>
+                    <span>• Title/Role</span>
+                    <span>• Email Address</span>
+                    <span>• Calendar Link</span>
+                  </div>
+                </div>
+                <div className="mt-4 text-xs text-gray-500">
+                  <strong>AI-Assisted Setup:</strong> When creating a project, you can provide your website URL and the AI will automatically extract and populate your business context.
+                </div>
+              </div>
 
               {/* Research Playbook */}
               <div className="border border-gray-200 rounded-xl p-6 mb-4" id="playbook">
@@ -657,9 +708,21 @@ IF no recent news found
                 </div>
                 <div className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
+                    <code className="text-sm font-semibold text-gray-900">/admin/projects</code>
+                  </div>
+                  <p className="text-sm text-gray-600">Project management - create, switch between, and manage projects</p>
+                </div>
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
                     <code className="text-sm font-semibold text-gray-900">/admin/settings</code>
                   </div>
                   <p className="text-sm text-gray-600">AI Settings overview - manage configurations per tier, set active config</p>
+                </div>
+                <div className="border border-teal-100 bg-teal-50/30 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <code className="text-sm font-semibold text-gray-900">/admin/settings/business-context</code>
+                  </div>
+                  <p className="text-sm text-gray-600">Business Context - company info, products, value props, sender details</p>
                 </div>
                 <div className="border border-teal-100 bg-teal-50/30 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
@@ -745,12 +808,42 @@ CREATE TABLE enrichment_audit (
                 </pre>
               </div>
 
+              <h3 className="font-semibold text-gray-900 mb-3">Projects Table</h3>
+              <div className="bg-gray-900 rounded-lg p-4 mb-4 overflow-x-auto">
+                <pre className="text-sm text-gray-100">
+{`-- Projects (Business Context)
+CREATE TABLE projects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  company_name VARCHAR(255) NOT NULL,
+  company_website TEXT,
+  company_description TEXT,
+  products TEXT[],               -- array of products/services
+  value_propositions TEXT[],     -- key value props
+  differentiators TEXT[],        -- what makes you unique
+  target_customer_profile TEXT,  -- ideal customer description
+  industry_focus TEXT[],         -- industries you serve
+  competitors TEXT[],            -- competitor names
+  sender_name VARCHAR(255),
+  sender_title VARCHAR(255),
+  sender_email VARCHAR(255),
+  calendar_link TEXT,
+  scraped_data JSONB,            -- website scraping results
+  setup_method VARCHAR(20),      -- 'ai_assisted', 'template', 'manual'
+  is_active BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);`}
+                </pre>
+              </div>
+
               <h3 className="font-semibold text-gray-900 mb-3">Configuration Tables</h3>
               <div className="bg-gray-900 rounded-lg p-4 mb-4 overflow-x-auto">
                 <pre className="text-sm text-gray-100">
-{`-- Enrichment Configurations (per tier)
+{`-- Enrichment Configurations (per tier, linked to project)
 CREATE TABLE enrichment_configs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID REFERENCES projects(id),  -- links to project
   org_id UUID,  -- for multi-tenant support
   tier VARCHAR(20) NOT NULL,  -- standard, medium, premium
   name VARCHAR(255) NOT NULL,
@@ -873,6 +966,34 @@ CREATE TABLE template_library (
                     <code className="text-sm text-gray-900">/api/leads/[id]</code>
                   </div>
                   <p className="text-sm text-gray-600">Delete a lead from the database.</p>
+                </div>
+              </div>
+
+              <h3 className="font-semibold text-gray-900 mb-3">Project Endpoints</h3>
+              <div className="space-y-3 mb-6">
+                <div className="border border-teal-200 bg-teal-50/30 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-1 rounded">GET</span>
+                    <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded">POST</span>
+                    <code className="text-sm text-gray-900">/api/admin/project</code>
+                  </div>
+                  <p className="text-sm text-gray-600">List all projects / Create new project with business context</p>
+                </div>
+                <div className="border border-teal-200 bg-teal-50/30 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-1 rounded">GET</span>
+                    <span className="bg-amber-100 text-amber-700 text-xs font-semibold px-2 py-1 rounded">PUT</span>
+                    <span className="bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded">DELETE</span>
+                    <code className="text-sm text-gray-900">/api/admin/project/[id]</code>
+                  </div>
+                  <p className="text-sm text-gray-600">Get / Update / Delete specific project</p>
+                </div>
+                <div className="border border-teal-200 bg-teal-50/30 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded">POST</span>
+                    <code className="text-sm text-gray-900">/api/admin/project/[id]?action=activate</code>
+                  </div>
+                  <p className="text-sm text-gray-600">Set project as active (switches context for all operations)</p>
                 </div>
               </div>
 

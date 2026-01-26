@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createLead, listLeads } from '@/lib/db';
+import { getActiveProject } from '@/lib/project-db';
 import { addEnrichmentJob } from '@/lib/queue';
 import { LeadSchema, PaginationSchema } from '@/lib/validations';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/auth';
@@ -21,8 +22,18 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = LeadSchema.parse(body);
 
-    // Create lead in database
-    const lead = await createLead(validatedData);
+    // Get project ID from body or active project
+    let projectId = body.projectId;
+    if (!projectId) {
+      const activeProject = await getActiveProject();
+      projectId = activeProject?.id;
+    }
+
+    // Create lead in database with project ID
+    const lead = await createLead({
+      ...validatedData,
+      projectId,
+    });
 
     // Queue enrichment job
     await addEnrichmentJob(lead.id);
@@ -92,15 +103,24 @@ export async function GET(request: NextRequest) {
       limit: searchParams.get('limit') || undefined,
       status: searchParams.get('status') || undefined,
     };
+    const projectIdParam = searchParams.get('projectId');
 
     // Validate pagination params
     const validatedParams = PaginationSchema.parse(params);
 
-    // Fetch leads from database
+    // Get project ID - use param or fall back to active project
+    let projectId = projectIdParam;
+    if (!projectId) {
+      const activeProject = await getActiveProject();
+      projectId = activeProject?.id || undefined;
+    }
+
+    // Fetch leads from database filtered by project
     const { leads, total } = await listLeads({
       page: validatedParams.page,
       limit: validatedParams.limit,
       status: validatedParams.status,
+      projectId: projectId || undefined,
     });
 
     const response: LeadsListResponse = {

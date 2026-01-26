@@ -6,6 +6,7 @@ import {
   updateProject,
   setActiveProject,
 } from '@/lib/project-db';
+import { createFullEnrichmentConfig } from '@/lib/enrichment-config-db';
 import { z } from 'zod';
 
 // Validation schemas
@@ -24,6 +25,14 @@ const CreateProjectSchema = z.object({
   senderTitle: z.string().optional(),
   senderEmail: z.string().email().optional().or(z.literal('')),
   calendarLink: z.string().url().optional().or(z.literal('')),
+  setupMethod: z.enum(['ai_assisted', 'template', 'manual']).optional(),
+  sourceTemplateId: z.string().optional(),
+  // AI-generated configs (passed from wizard when using AI-assisted setup)
+  generatedConfigs: z.object({
+    standard: z.any(),
+    medium: z.any(),
+    premium: z.any(),
+  }).optional(),
 });
 
 // GET /api/admin/project - List all projects or get active project
@@ -81,11 +90,36 @@ export async function POST(request: NextRequest) {
       calendarLink: data.calendarLink || undefined,
     });
 
-    // Set as active if it's the first project
-    const projects = await listProjects();
-    if (projects.length === 1) {
-      await setActiveProject(project.id);
+    // If AI-generated configs are provided, save them to the database
+    if (data.generatedConfigs) {
+      console.log('[POST /api/admin/project] Saving AI-generated configs for project:', project.id);
+      console.log('[POST /api/admin/project] Configs received:', {
+        hasStandard: !!data.generatedConfigs.standard,
+        hasMedium: !!data.generatedConfigs.medium,
+        hasPremium: !!data.generatedConfigs.premium,
+        standardPlaybook: data.generatedConfigs.standard?.playbook?.length || 0,
+        standardPriorities: data.generatedConfigs.standard?.priorities?.length || 0,
+      });
+
+      const tiers = ['standard', 'medium', 'premium'] as const;
+      for (const tier of tiers) {
+        const tierConfig = data.generatedConfigs[tier];
+        if (tierConfig) {
+          try {
+            await createFullEnrichmentConfig(tierConfig, project.id);
+            console.log(`[POST /api/admin/project] Saved ${tier} config for project:`, project.id);
+          } catch (configError) {
+            console.error(`[POST /api/admin/project] Failed to save ${tier} config:`, configError);
+            // Continue with other tiers even if one fails
+          }
+        }
+      }
+    } else {
+      console.log('[POST /api/admin/project] No generated configs provided - creating empty project');
     }
+
+    // Always set the newly created project as active
+    await setActiveProject(project.id);
 
     return NextResponse.json(project, { status: 201 });
   } catch (error) {
