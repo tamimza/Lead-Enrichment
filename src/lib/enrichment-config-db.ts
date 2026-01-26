@@ -299,6 +299,27 @@ export async function deleteEnrichmentConfig(id: string): Promise<boolean> {
   return result.rowCount !== null && result.rowCount > 0;
 }
 
+// Activate a config (deactivate others of same tier first)
+export async function activateEnrichmentConfig(id: string): Promise<EnrichmentConfig | null> {
+  // First get the config to find its tier
+  const config = await getEnrichmentConfig(id);
+  if (!config) return null;
+
+  // Deactivate all configs of the same tier
+  await pool.query(
+    'UPDATE enrichment_configs SET is_active = false, updated_at = NOW() WHERE tier = $1 AND is_active = true',
+    [config.tier]
+  );
+
+  // Activate the specified config
+  const result = await pool.query<EnrichmentConfigRow>(
+    'UPDATE enrichment_configs SET is_active = true, updated_at = NOW() WHERE id = $1 RETURNING *',
+    [id]
+  );
+
+  return result.rows.length > 0 ? rowToConfig(result.rows[0]) : null;
+}
+
 // =============================================================================
 // Search Playbook Steps CRUD
 // =============================================================================

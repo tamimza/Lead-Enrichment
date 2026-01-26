@@ -1,25 +1,55 @@
 'use client';
 
 import { useState, useEffect, useContext } from 'react';
+import { useRouter } from 'next/navigation';
 import { SettingsContext } from '../layout';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import type { TemplateLibraryItem, EnrichmentTierConfig } from '@/types/enrichment-config';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  BookTemplate, Trash2, Loader2, CheckCircle2, ArrowRight, Save, Sparkles
+} from 'lucide-react';
 
 const CATEGORIES = ['SaaS', 'FinTech', 'Healthcare', 'Enterprise', 'Startup', 'Agency', 'E-commerce', 'Other'];
 
 export default function TemplatesPage() {
+  const router = useRouter();
   const context = useContext(SettingsContext);
   const [templates, setTemplates] = useState<TemplateLibraryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showApplyModal, setShowApplyModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateLibraryItem | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterTier, setFilterTier] = useState<EnrichmentTierConfig | 'all'>('all');
 
-  const { activeConfig, selectedTier, refreshConfigs } = context || {
+  const { activeConfig, refreshConfigs, setSelectedTier } = context || {
     activeConfig: null,
-    selectedTier: 'standard' as EnrichmentTierConfig,
     refreshConfigs: async () => {},
+    setSelectedTier: () => {},
   };
 
   const fetchTemplates = async () => {
@@ -47,24 +77,58 @@ export default function TemplatesPage() {
     fetchTemplates();
   }, [filterCategory, filterTier]);
 
-  const handleApplyTemplate = async (template: TemplateLibraryItem) => {
-    const name = prompt(`Enter a name for the new configuration:`, `${template.name} Config`);
-    if (!name) return;
+  const handleApplyTemplate = (template: TemplateLibraryItem) => {
+    setSelectedTemplate(template);
+    setShowApplyModal(true);
+  };
+
+  const handleConfirmApply = async (name: string, activateNow: boolean) => {
+    if (!selectedTemplate) return;
 
     try {
+      // Create config from template
       const response = await fetch('/api/admin/template-library', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          templateId: template.id,
-          tier: selectedTier,
+          templateId: selectedTemplate.id,
+          tier: selectedTemplate.tier,
           name,
         }),
       });
 
       if (response.ok) {
-        toast.success('Configuration created from template');
+        const data = await response.json();
         await refreshConfigs();
+
+        if (activateNow) {
+          // Activate the new config
+          const activateResponse = await fetch(`/api/admin/enrichment-config/${data.config.id}/activate`, {
+            method: 'POST',
+          });
+
+          if (activateResponse.ok) {
+            toast.success('Configuration created and activated!');
+            // Switch to the template's tier and navigate to Overview
+            setSelectedTier(selectedTemplate.tier);
+            router.push('/admin/settings');
+          } else {
+            toast.success('Configuration created. Go to Overview to activate it.');
+          }
+        } else {
+          toast.success(
+            <div className="space-y-1">
+              <div className="font-medium">Configuration created!</div>
+              <div className="text-sm text-muted-foreground">
+                Go to Overview to activate "{name}"
+              </div>
+            </div>
+          );
+        }
+
+        setShowApplyModal(false);
+        setSelectedTemplate(null);
+        await fetchTemplates();
       } else {
         toast.error('Failed to apply template');
       }
@@ -121,164 +185,193 @@ export default function TemplatesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Template Library</h2>
-            <p className="text-sm text-gray-500">Pre-built configurations for different industries and use cases.</p>
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <BookTemplate className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-base">Template Library</CardTitle>
+                <CardDescription>Pre-built configurations for different industries and use cases</CardDescription>
+              </div>
+            </div>
+            {activeConfig && (
+              <Button onClick={() => setShowSaveModal(true)}>
+                <Save className="w-4 h-4 mr-2" />
+                Save Current as Template
+              </Button>
+            )}
           </div>
-          {activeConfig && (
-            <button
-              onClick={() => setShowSaveModal(true)}
-              className="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition-colors"
-            >
-              Save Current as Template
-            </button>
-          )}
-        </div>
+        </CardHeader>
+        <CardContent>
+          {/* Info Box */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="flex gap-3">
+              <Sparkles className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-blue-900 mb-1">How Templates Work</p>
+                <p className="text-blue-700">
+                  Templates are pre-configured settings (playbook, priorities, rules, email style) that you can apply to quickly set up a new configuration.
+                  When you apply a template, it creates a <strong>new configuration</strong> that you can then activate and customize.
+                </p>
+              </div>
+            </div>
+          </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">Category:</span>
-            <select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-            >
-              <option value="all">All Categories</option>
-              {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Label className="text-muted-foreground">Category:</Label>
+              <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label className="text-muted-foreground">Tier:</Label>
+              <Select value={filterTier} onValueChange={(v) => setFilterTier(v as EnrichmentTierConfig | 'all')}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Tiers</SelectItem>
+                  <SelectItem value="standard">Standard</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="premium">Premium</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">Tier:</span>
-            <select
-              value={filterTier}
-              onChange={(e) => setFilterTier(e.target.value as EnrichmentTierConfig | 'all')}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-            >
-              <option value="all">All Tiers</option>
-              <option value="standard">Standard</option>
-              <option value="medium">Medium</option>
-              <option value="premium">Premium</option>
-            </select>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Templates Grid */}
       {isLoading ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full mx-auto"></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-5 space-y-3">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
       ) : templates.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-          <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-          </svg>
-          <p className="text-gray-600 font-medium">No templates found</p>
-          <p className="text-sm text-gray-500 mt-1">Try adjusting your filters or save your current config as a template.</p>
-        </div>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <BookTemplate className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+            <p className="font-medium">No templates found</p>
+            <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters or save your current config as a template.</p>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {templates.map((template) => (
-            <div
-              key={template.id}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="font-semibold text-gray-900">{template.name}</h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
-                      {template.category}
-                    </span>
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                      template.tier === 'premium' ? 'bg-purple-100 text-purple-700' :
-                      template.tier === 'medium' ? 'bg-amber-100 text-amber-700' :
-                      'bg-gray-100 text-gray-600'
-                    }`}>
-                      {template.tier}
-                    </span>
-                    {template.isSystemTemplate && (
-                      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-                        System
-                      </span>
-                    )}
+            <Card key={template.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="font-semibold">{template.name}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="secondary">{template.category}</Badge>
+                      <Badge variant={
+                        template.tier === 'premium' ? 'default' :
+                        template.tier === 'medium' ? 'warning' : 'secondary'
+                      }>
+                        {template.tier}
+                      </Badge>
+                      {template.isSystemTemplate && (
+                        <Badge variant="info">System</Badge>
+                      )}
+                    </div>
+                  </div>
+                  {!template.isSystemTemplate && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteTemplate(template.id)}
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+
+                {template.description && (
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{template.description}</p>
+                )}
+
+                {/* Config Summary */}
+                <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                  <div className="bg-muted rounded px-2 py-1.5">
+                    <span className="text-muted-foreground">Max Turns:</span>
+                    <span className="ml-1 font-medium">{template.configSnapshot.maxTurns}</span>
+                  </div>
+                  <div className="bg-muted rounded px-2 py-1.5">
+                    <span className="text-muted-foreground">Budget:</span>
+                    <span className="ml-1 font-medium">${template.configSnapshot.maxBudgetUsd}</span>
+                  </div>
+                  <div className="bg-muted rounded px-2 py-1.5">
+                    <span className="text-muted-foreground">Tone:</span>
+                    <span className="ml-1 font-medium capitalize">{template.configSnapshot.emailTone || 'professional'}</span>
+                  </div>
+                  <div className="bg-muted rounded px-2 py-1.5">
+                    <span className="text-muted-foreground">Tools:</span>
+                    <span className="ml-1 font-medium">{template.configSnapshot.allowedTools?.length || 0}</span>
                   </div>
                 </div>
-                {!template.isSystemTemplate && (
-                  <button
-                    onClick={() => handleDeleteTemplate(template.id)}
-                    className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+
+                {/* Tags */}
+                {template.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {template.tags.map((tag) => (
+                      <span key={tag} className="px-2 py-0.5 text-xs bg-muted rounded">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 )}
-              </div>
 
-              {template.description && (
-                <p className="text-sm text-gray-500 mb-3 line-clamp-2">{template.description}</p>
-              )}
-
-              {/* Config Summary */}
-              <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-                <div className="bg-gray-50 rounded px-2 py-1">
-                  <span className="text-gray-500">Max Turns:</span>
-                  <span className="ml-1 font-medium text-gray-900">{template.configSnapshot.maxTurns}</span>
+                {/* Actions */}
+                <div className="flex items-center justify-between pt-3 border-t">
+                  <span className="text-xs text-muted-foreground">
+                    Used {template.useCount} times
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleApplyTemplate(template)}
+                  >
+                    Apply Template
+                    <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
                 </div>
-                <div className="bg-gray-50 rounded px-2 py-1">
-                  <span className="text-gray-500">Budget:</span>
-                  <span className="ml-1 font-medium text-gray-900">${template.configSnapshot.maxBudgetUsd}</span>
-                </div>
-                <div className="bg-gray-50 rounded px-2 py-1">
-                  <span className="text-gray-500">Tone:</span>
-                  <span className="ml-1 font-medium text-gray-900 capitalize">{template.configSnapshot.emailTone}</span>
-                </div>
-                <div className="bg-gray-50 rounded px-2 py-1">
-                  <span className="text-gray-500">Tools:</span>
-                  <span className="ml-1 font-medium text-gray-900">{template.configSnapshot.allowedTools?.length || 0}</span>
-                </div>
-              </div>
-
-              {/* Tags */}
-              {template.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1 mb-3">
-                  {template.tags.map((tag) => (
-                    <span key={tag} className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                <span className="text-xs text-gray-400">
-                  Used {template.useCount} times
-                </span>
-                <button
-                  onClick={() => handleApplyTemplate(template)}
-                  className="px-3 py-1.5 bg-teal-50 text-teal-700 text-sm font-medium rounded-lg hover:bg-teal-100 transition-colors"
-                >
-                  Apply Template
-                </button>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
 
-      {/* Template Details Modal */}
-      {selectedTemplate && (
-        <TemplateDetailsModal
+      {/* Apply Template Modal */}
+      {showApplyModal && selectedTemplate && (
+        <ApplyTemplateModal
           template={selectedTemplate}
-          onClose={() => setSelectedTemplate(null)}
-          onApply={() => handleApplyTemplate(selectedTemplate)}
+          onClose={() => {
+            setShowApplyModal(false);
+            setSelectedTemplate(null);
+          }}
+          onApply={handleConfirmApply}
         />
       )}
 
@@ -295,45 +388,113 @@ export default function TemplatesPage() {
   );
 }
 
-function TemplateDetailsModal({
+function ApplyTemplateModal({
   template,
   onClose,
   onApply,
 }: {
   template: TemplateLibraryItem;
   onClose: () => void;
-  onApply: () => void;
+  onApply: (name: string, activateNow: boolean) => Promise<void>;
 }) {
+  const [name, setName] = useState(`${template.name} Config`);
+  const [activateNow, setActivateNow] = useState(true);
+  const [isApplying, setIsApplying] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsApplying(true);
+    await onApply(name, activateNow);
+    setIsApplying(false);
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">{template.name}</h3>
-          <p className="text-sm text-gray-500 mt-1">{template.description}</p>
-        </div>
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Apply Template: {template.name}</DialogTitle>
+          <DialogDescription>
+            Create a new configuration based on this template
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="p-6 space-y-4">
-          <pre className="bg-gray-50 rounded-lg p-4 text-xs overflow-auto max-h-64">
-            {JSON.stringify(template.configSnapshot, null, 2)}
-          </pre>
-        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* What the template includes */}
+          <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+            <p className="text-sm font-medium">This template includes:</p>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-primary" />
+                <span>Max {template.configSnapshot.maxTurns} turns</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-primary" />
+                <span>${template.configSnapshot.maxBudgetUsd} budget</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-primary" />
+                <span className="capitalize">{template.configSnapshot.emailTone || 'professional'} tone</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-primary" />
+                <span>{template.configSnapshot.allowedTools?.length || 0} tools</span>
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground flex items-center gap-1">
+              For tier: <Badge variant={template.tier === 'premium' ? 'default' : template.tier === 'medium' ? 'warning' : 'secondary'}>{template.tier}</Badge>
+            </div>
+          </div>
 
-        <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            Close
-          </button>
-          <button
-            onClick={onApply}
-            className="px-4 py-2 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 transition-colors"
-          >
-            Apply Template
-          </button>
-        </div>
-      </div>
-    </div>
+          <div className="space-y-2">
+            <Label htmlFor="configName">Configuration Name</Label>
+            <Input
+              id="configName"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter a name for your new config"
+              required
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded-lg">
+            <div>
+              <Label htmlFor="activateNow" className="font-medium">Activate immediately</Label>
+              <p className="text-xs text-muted-foreground">Set this as the active config for {template.tier} tier</p>
+            </div>
+            <Switch
+              id="activateNow"
+              checked={activateNow}
+              onCheckedChange={setActivateNow}
+            />
+          </div>
+
+          {!activateNow && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+              The config will be created but not activated. Go to <strong>Overview</strong> to activate it later.
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isApplying || !name}>
+              {isApplying ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Applying...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  Apply Template
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -363,78 +524,78 @@ function SaveTemplateModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Save as Template</h3>
-          <p className="text-sm text-gray-500 mt-1">Save your current {tier} configuration to the template library.</p>
-        </div>
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Save as Template</DialogTitle>
+          <DialogDescription>
+            Save your current {tier} configuration to the template library
+          </DialogDescription>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Template Name</label>
-            <input
-              type="text"
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="templateName">Template Name</Label>
+            <Input
+              id="templateName"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               required
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea
+          <div className="space-y-2">
+            <Label htmlFor="templateDesc">Description</Label>
+            <Textarea
+              id="templateDesc"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-              rows={2}
               placeholder="Describe what this template is optimized for"
+              rows={2}
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-            >
-              {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
+          <div className="space-y-2">
+            <Label htmlFor="templateCategory">Category</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORIES.map((cat) => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tags (comma separated)</label>
-            <input
-              type="text"
+          <div className="space-y-2">
+            <Label htmlFor="templateTags">Tags (comma separated)</Label>
+            <Input
+              id="templateTags"
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               placeholder="b2b, outbound, tech"
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors"
-            >
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSaving || !name}
-              className="px-4 py-2 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50"
-            >
-              {isSaving ? 'Saving...' : 'Save Template'}
-            </button>
-          </div>
+            </Button>
+            <Button type="submit" disabled={isSaving || !name}>
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Template'
+              )}
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
