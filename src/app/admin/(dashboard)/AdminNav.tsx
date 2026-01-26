@@ -6,7 +6,7 @@
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { Settings, LogOut, Zap, LayoutDashboard } from 'lucide-react';
+import { Settings, LogOut, Zap, LayoutDashboard, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import ProjectSelector from '@/components/admin/ProjectSelector';
@@ -31,7 +31,8 @@ export default function AdminNav() {
     }
   };
 
-  const isSettingsActive = pathname.startsWith('/admin/settings');
+  const isSettingsActive = pathname.startsWith('/admin/settings') && !pathname.includes('api-keys');
+  const isApiKeysActive = pathname.includes('/admin/settings/api-keys');
   const isDashboardActive = pathname === '/admin';
 
   return (
@@ -69,6 +70,18 @@ export default function AdminNav() {
               >
                 <Settings className="w-4 h-4" />
                 AI Settings
+              </Link>
+              <Link
+                href="/admin/settings/api-keys"
+                className={cn(
+                  'px-3 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5',
+                  isApiKeysActive
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                )}
+              >
+                <Key className="w-4 h-4" />
+                API Keys
               </Link>
             </div>
           </div>
