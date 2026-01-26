@@ -1,5 +1,6 @@
 import type { Lead } from '@/types';
 import type { LoadedConfig } from './config-loader';
+import type { BusinessContext } from '@/types/project';
 import {
   getEffectiveConfig,
   getPriorityInstructions,
@@ -24,10 +25,12 @@ export interface BuiltPrompt {
 /**
  * Build the enrichment prompt based on the loaded configuration.
  * If no config is loaded (using defaults), returns a minimal prompt structure.
+ * Now includes optional business context for the sender's company.
  */
 export function buildEnrichmentPrompt(
   lead: Lead,
-  loadedConfig: LoadedConfig
+  loadedConfig: LoadedConfig,
+  businessContext?: BusinessContext | null
 ): BuiltPrompt {
   const config = getEffectiveConfig(loadedConfig);
   const priorities = getPriorityInstructions(loadedConfig);
@@ -36,11 +39,56 @@ export function buildEnrichmentPrompt(
   const playbookSteps = getPlaybookSteps(loadedConfig, loadedConfig.tier);
   const blacklist = getBlacklistForPrompt(loadedConfig);
 
+  // Merge project competitors into blacklist
+  if (businessContext?.competitors && businessContext.competitors.length > 0) {
+    blacklist.competitors = [
+      ...new Set([...blacklist.competitors, ...businessContext.competitors])
+    ];
+  }
+
   // Build system prompt sections
   const systemParts: string[] = [];
 
-  // Core identity
-  systemParts.push(`You are an expert lead research and enrichment assistant. Your task is to gather comprehensive information about a business lead and craft a personalized outreach email.`);
+  // Core identity - now includes sender context if available
+  if (businessContext && businessContext.companyName) {
+    systemParts.push(`You are a sales development representative for ${businessContext.companyName}. Your task is to research a business lead and craft a personalized outreach email that connects THEIR specific situation to YOUR company's value proposition.`);
+  } else {
+    systemParts.push(`You are an expert lead research and enrichment assistant. Your task is to gather comprehensive information about a business lead and craft a personalized outreach email.`);
+  }
+
+  // About Us section - only if business context is provided
+  if (businessContext && businessContext.companyName) {
+    const aboutParts: string[] = [];
+    aboutParts.push(`\n## About Us (${businessContext.companyName})`);
+
+    if (businessContext.companyDescription) {
+      aboutParts.push(`**What We Do:** ${businessContext.companyDescription}`);
+    }
+
+    if (businessContext.products && businessContext.products.length > 0) {
+      aboutParts.push(`**Our Products/Services:** ${businessContext.products.join(', ')}`);
+    }
+
+    if (businessContext.valuePropositions && businessContext.valuePropositions.length > 0) {
+      aboutParts.push(`**Our Value Propositions:**\n${businessContext.valuePropositions.map(v => `- ${v}`).join('\n')}`);
+    }
+
+    if (businessContext.differentiators && businessContext.differentiators.length > 0) {
+      aboutParts.push(`**What Makes Us Different:** ${businessContext.differentiators.join(', ')}`);
+    }
+
+    if (businessContext.targetCustomerProfile) {
+      aboutParts.push(`**Our Target Customers:** ${businessContext.targetCustomerProfile}`);
+    }
+
+    if (businessContext.industryFocus && businessContext.industryFocus.length > 0) {
+      aboutParts.push(`**Industries We Focus On:** ${businessContext.industryFocus.join(', ')}`);
+    }
+
+    aboutParts.push(`\n**Your Goal:** Research the lead below and find connections between THEIR situation and OUR value propositions. The email should feel personalized to them while naturally introducing how ${businessContext.companyName} could help.`);
+
+    systemParts.push(aboutParts.join('\n'));
+  }
 
   // Tool usage constraint - CRITICAL for controlling costs
   systemParts.push(`\n## IMPORTANT: Tool Usage Limit
@@ -133,8 +181,14 @@ You MUST complete your research using a MAXIMUM of ${config.maxToolCalls} tool c
     systemParts.push(`\n## Email Subject Line\nCreate a compelling, personalized subject line (5-10 words) that references something specific about the lead or company.`);
   }
 
-  // Signature template
-  if (emailTemplate?.signatureTemplate) {
+  // Signature template - use business context if available, otherwise use email template
+  if (businessContext?.senderName) {
+    const signatureParts = [businessContext.senderName];
+    if (businessContext.senderTitle) signatureParts.push(businessContext.senderTitle);
+    if (businessContext.companyName) signatureParts.push(businessContext.companyName);
+    if (businessContext.calendarLink) signatureParts.push(`\nBook a call: ${businessContext.calendarLink}`);
+    systemParts.push(`\n## Email Signature\nEnd the email with this signature:\n${signatureParts.join('\n')}`);
+  } else if (emailTemplate?.signatureTemplate) {
     systemParts.push(`\n## Email Signature\nEnd the email with this signature:\n${emailTemplate.signatureTemplate}`);
   }
 

@@ -1,16 +1,18 @@
 // Lead Enrichment Application - Agentic Enrichment Worker
 // Uses Claude Agent SDK's query() with MCP tools and structured output
-// Now supports database-driven configuration
+// Now supports database-driven configuration and business context
 
 import { query, createSdkMcpServer } from '@anthropic-ai/claude-agent-sdk';
 import { getLead, updateLead, updateStatus } from '@/lib/db';
 import { createAuditEntry, completeAuditEntry } from '@/lib/audit';
 import { loadConfigForTier, getEffectiveConfig, applyBlacklistToContent, type LoadedConfig } from '@/lib/config-loader';
 import { buildEnrichmentPrompt, buildDefaultPrompt } from '@/lib/prompt-builder';
+import { getActiveBusinessContext } from '@/lib/project-db';
 import { scrapeCompanyWebsiteTool, scrapeLinkedinTool } from './mcp-tools';
 import { standardEnrichmentSchema, mediumEnrichmentSchema, premiumEnrichmentSchema } from './enrichment-schema';
 import type { StandardEnrichmentOutput, MediumEnrichmentOutput, PremiumEnrichmentOutput } from './enrichment-schema';
 import type { Lead, EnrichmentSource } from '@/types';
+import type { BusinessContext } from '@/types/project';
 import { categorizeTools } from '@/lib/tool-config';
 
 // Map of MCP tool IDs to their implementations
@@ -47,14 +49,19 @@ function createFilteredMcpServer(allowedMcpTools: string[]) {
 
 /**
  * Build prompt using database config if available, otherwise use defaults
+ * Now includes business context for the sender's company
  */
-function buildPromptFromConfig(lead: Lead, loadedConfig: LoadedConfig): string {
+function buildPromptFromConfig(
+  lead: Lead,
+  loadedConfig: LoadedConfig,
+  businessContext?: BusinessContext | null
+): string {
   if (loadedConfig.config && !loadedConfig.isDefault) {
-    // Use dynamic prompt builder with config
-    const { systemPrompt, userPrompt } = buildEnrichmentPrompt(lead, loadedConfig);
+    // Use dynamic prompt builder with config and business context
+    const { systemPrompt, userPrompt } = buildEnrichmentPrompt(lead, loadedConfig, businessContext);
     return `${systemPrompt}\n\n${userPrompt}`;
   }
-  // Fall back to hardcoded defaults
+  // Fall back to hardcoded defaults (no business context in defaults for now)
   return buildDefaultPrompt(lead, loadedConfig.tier);
 }
 
@@ -364,7 +371,11 @@ export async function enrichLeadStandard(leadId: string): Promise<void> {
   const loadedConfig = await loadConfigForTier('standard');
   const effectiveConfig = getEffectiveConfig(loadedConfig);
 
+  // Load business context (sender's company info)
+  const businessContext = await getActiveBusinessContext();
+
   console.log(`[Agent] Using config: ${loadedConfig.isDefault ? 'defaults' : loadedConfig.config?.name}`);
+  console.log(`[Agent] Business context: ${businessContext ? businessContext.companyName : 'none'}`);
 
   await updateStatus(leadId, 'processing');
 
@@ -384,7 +395,7 @@ export async function enrichLeadStandard(leadId: string): Promise<void> {
     // Build prompt using config or defaults
     const prompt = loadedConfig.isDefault
       ? buildStandardPrompt(lead)
-      : buildPromptFromConfig(lead, loadedConfig);
+      : buildPromptFromConfig(lead, loadedConfig, businessContext);
 
     // Categorize tools into builtin and MCP
     const { builtinTools, mcpTools } = categorizeTools(effectiveConfig.allowedTools);
@@ -534,7 +545,11 @@ export async function enrichLeadMedium(leadId: string): Promise<void> {
   const loadedConfig = await loadConfigForTier('medium');
   const effectiveConfig = getEffectiveConfig(loadedConfig);
 
+  // Load business context (sender's company info)
+  const businessContext = await getActiveBusinessContext();
+
   console.log(`[Agent] Using config: ${loadedConfig.isDefault ? 'defaults' : loadedConfig.config?.name}`);
+  console.log(`[Agent] Business context: ${businessContext ? businessContext.companyName : 'none'}`);
 
   await updateStatus(leadId, 'processing');
 
@@ -555,7 +570,7 @@ export async function enrichLeadMedium(leadId: string): Promise<void> {
     // Build prompt using config or defaults
     const prompt = loadedConfig.isDefault
       ? buildMediumPrompt(lead)
-      : buildPromptFromConfig(lead, loadedConfig);
+      : buildPromptFromConfig(lead, loadedConfig, businessContext);
 
     // Categorize tools into builtin and MCP
     const { builtinTools, mcpTools } = categorizeTools(effectiveConfig.allowedTools);
@@ -710,7 +725,11 @@ export async function enrichLeadPremium(leadId: string): Promise<void> {
   const loadedConfig = await loadConfigForTier('premium');
   const effectiveConfig = getEffectiveConfig(loadedConfig);
 
+  // Load business context (sender's company info)
+  const businessContext = await getActiveBusinessContext();
+
   console.log(`[Agent] Using config: ${loadedConfig.isDefault ? 'defaults' : loadedConfig.config?.name}`);
+  console.log(`[Agent] Business context: ${businessContext ? businessContext.companyName : 'none'}`);
 
   await updateStatus(leadId, 'processing');
 
@@ -731,7 +750,7 @@ export async function enrichLeadPremium(leadId: string): Promise<void> {
     // Build prompt using config or defaults
     const prompt = loadedConfig.isDefault
       ? buildPremiumPrompt(lead)
-      : buildPromptFromConfig(lead, loadedConfig);
+      : buildPromptFromConfig(lead, loadedConfig, businessContext);
 
     // Categorize tools into builtin and MCP
     const { builtinTools, mcpTools } = categorizeTools(effectiveConfig.allowedTools);
