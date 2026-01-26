@@ -30,10 +30,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Get project ID - use param or fall back to active project
-    let projectId = projectIdParam;
+    let projectId: string | undefined = projectIdParam || undefined;
     if (!projectId) {
       const activeProject = await getActiveProject();
-      projectId = activeProject?.id || undefined;
+      projectId = activeProject?.id;
     }
 
     const configs = await listEnrichmentConfigs(

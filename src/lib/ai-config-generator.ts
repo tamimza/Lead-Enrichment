@@ -335,10 +335,11 @@ Respond with JSON:
 
 export function generateFromTemplate(
   input: ProjectGenerationInput,
-  templateConfig: Record<string, unknown>
+  _templateConfig: Record<string, unknown>
 ): Partial<GeneratedProjectConfig> {
   // This creates a config based on a template, customizing names only
   // No AI cost - just string replacement
+  // Note: _templateConfig will be used in future for template-based customization
 
   const companyName = input.companyName;
 

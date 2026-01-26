@@ -100,7 +100,6 @@ export default function NewProjectWizard() {
   // Array input helpers
   const [newProduct, setNewProduct] = useState('');
   const [newValueProp, setNewValueProp] = useState('');
-  const [newDifferentiator, setNewDifferentiator] = useState('');
   const [newIndustry, setNewIndustry] = useState('');
   const [newCompetitor, setNewCompetitor] = useState('');
 
@@ -912,14 +911,6 @@ export default function NewProjectWizard() {
     if (state.setupMethod === 'template') return renderStep2Template();
     // For manual, skip step 2 entirely
     return null;
-  };
-
-  // Adjust displayed step
-  const getDisplayStep = () => {
-    if (state.setupMethod === 'manual' && state.step >= 2) {
-      return state.step; // Manual skips step 2
-    }
-    return state.step;
   };
 
   return (
