@@ -530,7 +530,12 @@ export async function enrichLeadByTier(leadId: string): Promise<void> {
     throw new Error(`Lead not found: ${leadId}`);
   }
 
-  if (lead.enrichmentTier === 'premium') {
+  const tier = lead.enrichmentTier || 'standard';
+  console.log(`[Agent] Processing ${tier.toUpperCase()} lead: ${leadId}`);
+
+  // Premium and Medium both use web research
+  // Standard uses inference only
+  if (tier === 'premium' || tier === 'medium') {
     await enrichLeadPremium(leadId);
   } else {
     await enrichLeadStandard(leadId);

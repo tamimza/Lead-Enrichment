@@ -6,8 +6,9 @@ import './env-loader';
 
 import { Worker } from 'bullmq';
 import Redis from 'ioredis';
-// Use Claude Agent SDK for agentic enrichment with MCP tools
-import { enrichLeadByTier } from '../src/agent/enrichment-agent';
+// Use Anthropic SDK directly for production (no CLI dependency)
+// The enhanced worker uses direct API calls with tool use
+import { enrichLeadByTier } from '../src/agent/enrichment-worker-enhanced';
 import { closeQueue, getQueueStats } from '../src/lib/queue';
 
 // Redis connection for worker
