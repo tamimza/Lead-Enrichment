@@ -540,8 +540,8 @@ function CreateConfigModal({
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium">{tool.name}</span>
-                        <Badge variant={tool.category === 'mcp' ? 'default' : 'secondary'} className="text-xs">
-                          {tool.category === 'mcp' ? 'MCP' : 'Built-in'}
+                        <Badge variant={tool.category === 'custom' ? 'default' : 'secondary'} className="text-xs">
+                          {tool.category === 'custom' ? 'Custom' : 'Server'}
                         </Badge>
                       </div>
                       <div className="text-xs text-muted-foreground">{tool.description}</div>
@@ -751,8 +751,8 @@ function EditConfigModal({
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{tool.name}</span>
-                          <Badge variant={tool.category === 'mcp' ? 'default' : 'secondary'} className="text-xs">
-                            {tool.category === 'mcp' ? 'MCP' : 'Built-in'}
+                          <Badge variant={tool.category === 'custom' ? 'default' : 'secondary'} className="text-xs">
+                            {tool.category === 'custom' ? 'Custom' : 'Server'}
                           </Badge>
                           {!isAvailableForTier && (
                             <Badge variant="warning" className="text-xs">

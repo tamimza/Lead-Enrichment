@@ -252,8 +252,11 @@ function buildOutputRequirements(
 ): string {
   const requirements: string[] = ['\n## Required Output'];
 
-  // Common requirements
-  requirements.push(`Provide your findings as a JSON object with the following structure:`);
+  // Structured output instruction
+  requirements.push(`When you have completed your research, you MUST call the submit_enrichment tool with your results.
+DO NOT output JSON as text - always use the submit_enrichment tool.
+
+The submit_enrichment tool expects the following structure:`);
 
   const signatureNote = signatureTemplate
     ? ` Include the provided signature at the end.`
@@ -371,7 +374,10 @@ Instructions:
 3. Create a compelling email subject line (5-10 words) that references something specific
 4. Write a personalized email (3-4 paragraphs, 100-150 words) that references specific findings
 
-Return your findings as JSON with these fields:
+When you have completed your research, you MUST call the submit_enrichment tool with your results.
+DO NOT output JSON as text - always use the submit_enrichment tool.
+
+The submit_enrichment tool expects:
 - enrichment: { role_summary, company_focus, key_insights[], confidence_score, data_freshness }
 - email_subject: A compelling, personalized subject line
 - draft_email: The personalized email
@@ -395,7 +401,10 @@ Instructions:
 4. Create a compelling email subject line that references your research findings
 5. Write a personalized email (3-4 paragraphs, 150-200 words)
 
-Return your findings as JSON with these fields:
+When you have completed your research, you MUST call the submit_enrichment tool with your results.
+DO NOT output JSON as text - always use the submit_enrichment tool.
+
+The submit_enrichment tool expects:
 - enrichment: { role_summary, company_focus, key_insights[], company_info{}, likely_challenges[], confidence_score, data_freshness }
 - email_subject: A compelling subject line referencing company research
 - draft_email: The personalized email
@@ -422,7 +431,10 @@ Instructions:
 6. Create a highly personalized email subject line referencing specific research findings
 7. Write a highly personalized email (4-5 paragraphs, 200-300 words)
 
-Return your findings as JSON with these fields:
+When you have completed your research, you MUST call the submit_enrichment tool with your results.
+DO NOT output JSON as text - always use the submit_enrichment tool.
+
+The submit_enrichment tool expects:
 - enrichment: { role_summary, company_focus, key_insights[], company_info{}, person_info{}, likely_challenges[], potential_value_props[], talking_points[], confidence_score, data_freshness }
 - email_subject: Highly personalized subject line referencing specific research
 - draft_email: Highly personalized email

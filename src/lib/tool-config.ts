@@ -5,41 +5,47 @@ export interface ToolDefinition {
   id: string;
   name: string;
   description: string;
-  category: 'builtin' | 'mcp';
+  category: 'server' | 'custom';
   tier: 'standard' | 'medium' | 'premium'; // Minimum tier required
+  // Server tool specific fields
+  serverType?: 'web_search_20250305' | 'web_fetch_20250910';
+  betaHeader?: string;
 }
 
 // All available tools in the system
 export const ALL_AVAILABLE_TOOLS: ToolDefinition[] = [
-  // Built-in Claude Agent SDK tools
+  // Server tools (Anthropic executes these)
   {
-    id: 'WebSearch',
+    id: 'web_search',
     name: 'Web Search',
     description: 'Search the web for information using web search',
-    category: 'builtin',
+    category: 'server',
     tier: 'standard',
+    serverType: 'web_search_20250305',
   },
   {
-    id: 'WebFetch',
+    id: 'web_fetch',
     name: 'Web Fetch',
     description: 'Fetch and extract content from specific URLs',
-    category: 'builtin',
+    category: 'server',
     tier: 'standard',
+    serverType: 'web_fetch_20250910',
+    betaHeader: 'web-fetch-2025-09-10',
   },
 
-  // Custom MCP tools (defined in src/agent/mcp-tools.ts)
+  // Custom tools (we execute these)
   {
     id: 'scrape_company_website',
     name: 'Scrape Company Website',
     description: 'Extract structured data from company websites (about, products, team, contact)',
-    category: 'mcp',
+    category: 'custom',
     tier: 'medium',
   },
   {
     id: 'scrape_linkedin',
     name: 'Scrape LinkedIn',
     description: 'Extract professional info from LinkedIn profiles (requires Puppeteer)',
-    category: 'mcp',
+    category: 'custom',
     tier: 'premium',
   },
 ];
@@ -59,34 +65,46 @@ export function getToolsForTier(tier: 'standard' | 'medium' | 'premium'): ToolDe
 export function getDefaultToolsForTier(tier: 'standard' | 'medium' | 'premium'): string[] {
   switch (tier) {
     case 'standard':
-      return ['WebSearch', 'WebFetch'];
+      return ['web_search', 'web_fetch'];
     case 'medium':
-      return ['WebSearch', 'WebFetch', 'scrape_company_website'];
+      return ['web_search', 'web_fetch', 'scrape_company_website'];
     case 'premium':
-      return ['WebSearch', 'WebFetch', 'scrape_company_website', 'scrape_linkedin'];
+      return ['web_search', 'web_fetch', 'scrape_company_website', 'scrape_linkedin'];
   }
 }
 
-// Separate tools by category
+// Separate tools by category (server vs custom)
 export function categorizeTools(toolIds: string[]): {
-  builtinTools: string[];
-  mcpTools: string[];
+  serverTools: ToolDefinition[];
+  customTools: ToolDefinition[];
 } {
-  const builtinTools: string[] = [];
-  const mcpTools: string[] = [];
+  const serverTools: ToolDefinition[] = [];
+  const customTools: ToolDefinition[] = [];
 
   for (const toolId of toolIds) {
     const tool = ALL_AVAILABLE_TOOLS.find(t => t.id === toolId);
     if (tool) {
-      if (tool.category === 'builtin') {
-        builtinTools.push(toolId);
+      if (tool.category === 'server') {
+        serverTools.push(tool);
       } else {
-        mcpTools.push(toolId);
+        customTools.push(tool);
       }
     }
   }
 
-  return { builtinTools, mcpTools };
+  return { serverTools, customTools };
+}
+
+// Get required beta headers for given tools
+export function getRequiredBetaHeaders(toolIds: string[]): string[] {
+  const headers: string[] = [];
+  for (const toolId of toolIds) {
+    const tool = ALL_AVAILABLE_TOOLS.find(t => t.id === toolId);
+    if (tool?.betaHeader && !headers.includes(tool.betaHeader)) {
+      headers.push(tool.betaHeader);
+    }
+  }
+  return headers;
 }
 
 // Validate that all tools in the array are valid

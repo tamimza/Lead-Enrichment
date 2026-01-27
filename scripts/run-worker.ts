@@ -6,9 +6,8 @@ import './env-loader';
 
 import { Worker } from 'bullmq';
 import Redis from 'ioredis';
-// Use Anthropic SDK directly for production (no CLI dependency)
-// The enhanced worker uses direct API calls with tool use
-import { enrichLeadByTier } from '../src/agent/enrichment-worker-enhanced';
+// Uses Anthropic SDK directly with server tools and custom tools
+import { enrichLeadByTier } from '../src/agent/enrichment-agent';
 import { closeQueue, getQueueStats } from '../src/lib/queue';
 
 // Redis connection for worker
