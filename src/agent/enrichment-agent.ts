@@ -408,6 +408,7 @@ export async function enrichLeadStandard(leadId: string): Promise<void> {
     // Build query options
     const queryOptions: any = {
       model: 'sonnet',
+      apiKey: process.env.ANTHROPIC_API_KEY,
       maxTurns: effectiveConfig.maxTurns,
       allowedTools: builtinTools,
       outputFormat: {
@@ -583,6 +584,7 @@ export async function enrichLeadMedium(leadId: string): Promise<void> {
     // Build query options
     const queryOptions: any = {
       model: 'sonnet',
+      apiKey: process.env.ANTHROPIC_API_KEY,
       maxTurns: effectiveConfig.maxTurns,
       allowedTools: builtinTools,
       outputFormat: {
@@ -763,6 +765,7 @@ export async function enrichLeadPremium(leadId: string): Promise<void> {
     // Build query options
     const queryOptions: any = {
       model: 'sonnet',
+      apiKey: process.env.ANTHROPIC_API_KEY,
       maxTurns: effectiveConfig.maxTurns,
       allowedTools: builtinTools,
       outputFormat: {
