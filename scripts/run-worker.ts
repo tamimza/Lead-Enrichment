@@ -17,11 +17,38 @@ const useTls = redisUrl.startsWith('rediss://');
 
 const redisConnection = new Redis(redisUrl, {
   maxRetriesPerRequest: null,
+  enableReadyCheck: true,
+  keepAlive: 30000, // Send keepalive every 30 seconds
+  connectTimeout: 10000, // 10 second connection timeout
+  retryStrategy: (times: number) => {
+    // Reconnect after increasing delays, max 30 seconds
+    const delay = Math.min(times * 1000, 30000);
+    console.log(`[Redis] Reconnecting in ${delay}ms (attempt ${times})`);
+    return delay;
+  },
+  reconnectOnError: (err: Error) => {
+    // Reconnect on connection reset errors
+    const targetErrors = ['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT'];
+    return targetErrors.some(e => err.message.includes(e));
+  },
   ...(useTls && {
     tls: {
       rejectUnauthorized: false, // Required for Upstash
     },
   }),
+});
+
+// Log Redis connection events
+redisConnection.on('error', (err) => {
+  console.error('[Redis] Connection error:', err.message);
+});
+
+redisConnection.on('connect', () => {
+  console.log('[Redis] Connected');
+});
+
+redisConnection.on('reconnecting', () => {
+  console.log('[Redis] Reconnecting...');
 });
 
 console.log('\n========================================');
